@@ -72,6 +72,10 @@ function shortDate(dateValue) {
   return new Date(dateValue + "T00:00:00").toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
 }
 
+function fullDate(dateValue) {
+  return new Date(dateValue + "T00:00:00").toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
 function render() {
   const items = monthTransactions();
   const incomeItems = items.filter(item => item.type === "income");
@@ -82,7 +86,7 @@ function render() {
   const budget = data.budgets[selectedMonth] || 0;
   const budgetLeft = budget - expense;
   const savingRate = income ? Math.max(0, Math.round(balance / income * 100)) : 0;
-  const referenceDate = $("#dateFilter").value || (selectedMonth === currentMonth() ? localDate() : `${selectedMonth}-01`);
+  const referenceDate = selectedMonth === currentMonth() ? localDate() : `${selectedMonth}-01`;
   const week = weekRange(referenceDate);
   const weeklyExpense = data.transactions
     .filter(item => item.type === "expense" && item.date >= week.start && item.date <= week.end)
@@ -113,9 +117,20 @@ function renderBars(expenses) {
   const weeks = Array.from({ length: weekCount }, () => 0);
   expenses.forEach(item => { weeks[Math.floor((Number(item.date.slice(8,10)) - 1) / 7)] += item.amount; });
   const max = Math.max(...weeks, 1);
-  $("#barChart").innerHTML = weeks.map((value, index) => `
-    <div class="bar-group"><div class="bar" style="height:${Math.max(2, value / max * 100)}%" data-value="${money(value)}"></div><span class="bar-label">Tuần ${index + 1}</span></div>
-  `).join("");
+  const [year, month] = selectedMonth.split("-").map(Number);
+  $("#barChart").innerHTML = weeks.map((value, index) => {
+    const startDay = index * 7 + 1;
+    const endDay = Math.min(startDay + 6, daysInMonth);
+    const start = `${year}-${String(month).padStart(2, "0")}-${String(startDay).padStart(2, "0")}`;
+    const end = `${year}-${String(month).padStart(2, "0")}-${String(endDay).padStart(2, "0")}`;
+    const label = `Tuần ${index + 1}, từ ${fullDate(start)} đến ${fullDate(end)}, chi ${money(value)}`;
+    return `<div class="bar-group">
+      <div class="bar" tabindex="0" role="img" aria-label="${label}" style="height:${Math.max(2, value / max * 100)}%">
+        <span class="bar-tooltip"><b>Tuần ${index + 1}</b><span>${fullDate(start)} – ${fullDate(end)}</span><strong>${money(value)}</strong></span>
+      </div>
+      <span class="bar-label">Tuần ${index + 1}</span>
+    </div>`;
+  }).join("");
 }
 
 function renderCategories(expenses, total) {
@@ -135,9 +150,12 @@ function renderCategories(expenses, total) {
 function renderTransactions() {
   const query = $("#searchInput").value.trim().toLowerCase();
   const filter = $("#typeFilter").value;
-  const selectedDate = $("#dateFilter").value;
-  const filtered = monthTransactions().filter(item =>
-    (!selectedDate || item.date === selectedDate) &&
+  const dateFrom = $("#dateFrom").value;
+  const dateTo = $("#dateTo").value;
+  const source = dateFrom || dateTo ? data.transactions : monthTransactions();
+  const filtered = source.filter(item =>
+    (!dateFrom || item.date >= dateFrom) &&
+    (!dateTo || item.date <= dateTo) &&
     (filter === "all" || item.type === filter) &&
     (item.name.toLowerCase().includes(query) || (item.note || "").toLowerCase().includes(query))
   ).sort((a,b) => b.date.localeCompare(a.date));
@@ -153,7 +171,7 @@ function renderTransactions() {
     </div>`;
   }).join("");
   $("#emptyState").hidden = filtered.length !== 0;
-  $("#clearDateFilter").hidden = !selectedDate;
+  $("#clearDateFilter").hidden = !dateFrom && !dateTo;
 }
 
 function escapeHtml(text) { const el = document.createElement("div"); el.textContent = text; return el.innerHTML; }
@@ -185,17 +203,36 @@ document.addEventListener("keydown", event => { if (event.key === "Escape") { cl
 document.querySelectorAll('input[name="type"]').forEach(input => input.addEventListener("change", event => fillCategories(event.target.value)));
 $("#amountInput").addEventListener("input", formatAmountInput);
 $("#budgetInput").addEventListener("input", formatAmountInput);
-$("#monthFilter").addEventListener("change", event => { selectedMonth = event.target.value || currentMonth(); $("#dateFilter").value = ""; render(); });
-$("#searchInput").addEventListener("input", renderTransactions);
-$("#typeFilter").addEventListener("change", renderTransactions);
-$("#dateFilter").addEventListener("change", event => {
-  if (event.target.value) {
-    selectedMonth = event.target.value.slice(0, 7);
-    $("#monthFilter").value = selectedMonth;
-  }
+$("#monthFilter").addEventListener("change", event => {
+  selectedMonth = event.target.value || currentMonth();
+  $("#dateFrom").value = "";
+  $("#dateTo").value = "";
+  $("#dateFrom").max = "";
+  $("#dateTo").min = "";
   render();
 });
-$("#clearDateFilter").addEventListener("click", () => { $("#dateFilter").value = ""; render(); });
+$("#searchInput").addEventListener("input", renderTransactions);
+$("#typeFilter").addEventListener("change", renderTransactions);
+function updateDateRange(changedInput) {
+  const from = $("#dateFrom");
+  const to = $("#dateTo");
+  if (from.value && to.value && from.value > to.value) {
+    if (changedInput === from) to.value = from.value;
+    else from.value = to.value;
+  }
+  to.min = from.value || "";
+  from.max = to.value || "";
+  renderTransactions();
+}
+$("#dateFrom").addEventListener("change", event => updateDateRange(event.target));
+$("#dateTo").addEventListener("change", event => updateDateRange(event.target));
+$("#clearDateFilter").addEventListener("click", () => {
+  $("#dateFrom").value = "";
+  $("#dateTo").value = "";
+  $("#dateFrom").max = "";
+  $("#dateTo").min = "";
+  renderTransactions();
+});
 
 $("#transactionForm").addEventListener("submit", event => {
   event.preventDefault();

@@ -128,9 +128,11 @@
           </div>
           <div class="list-tools">
             <input type="search" id="searchInput" placeholder="Tìm giao dịch..." aria-label="Tìm giao dịch" />
-            <div class="date-filter-wrap">
-              <input type="date" id="dateFilter" aria-label="Lọc giao dịch theo ngày" title="Lọc theo ngày" />
-              <button class="clear-date-btn" id="clearDateFilter" type="button" aria-label="Bỏ lọc ngày" title="Bỏ lọc ngày" hidden>×</button>
+            <div class="date-range-filter" role="group" aria-label="Lọc giao dịch theo khoảng thời gian">
+              <label><span>Từ</span><input type="date" id="dateFrom" aria-label="Từ ngày" /></label>
+              <span class="date-range-separator">–</span>
+              <label><span>Đến</span><input type="date" id="dateTo" aria-label="Đến ngày" /></label>
+              <button class="clear-date-btn" id="clearDateFilter" type="button" aria-label="Bỏ lọc khoảng thời gian" title="Bỏ lọc khoảng thời gian" hidden>×</button>
             </div>
             <select id="typeFilter" aria-label="Lọc loại giao dịch">
               <option value="all">Tất cả</option>
