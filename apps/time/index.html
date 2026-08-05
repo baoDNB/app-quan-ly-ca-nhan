@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f4f1eb" />
+  <title>Nhịp — Quản lý thời gian</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#" aria-label="Trang chủ Nhịp">
+        <span class="brand-mark">N</span>
+        <span>Nhịp</span>
+      </a>
+
+      <nav class="nav" aria-label="Điều hướng chính">
+        <button class="nav-item active" data-view="today">
+          <span class="nav-icon">⌂</span><span>Hôm nay</span>
+        </button>
+        <button class="nav-item" data-view="upcoming">
+          <span class="nav-icon">□</span><span>Sắp tới</span>
+        </button>
+        <button class="nav-item" data-view="completed">
+          <span class="nav-icon">✓</span><span>Đã hoàn thành</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-section">
+        <p class="eyebrow">Danh mục</p>
+        <div id="categoryList" class="category-list"></div>
+      </div>
+
+      <div class="sidebar-quote">
+        <span>✦</span>
+        <p>Đi chậm cũng được,<br>miễn là vẫn đi.</p>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <button id="menuButton" class="icon-button menu-button" aria-label="Mở menu">☰</button>
+        <div>
+          <p id="todayLabel" class="eyebrow"></p>
+          <h1 id="greeting">Chào buổi sáng!</h1>
+        </div>
+        <div class="topbar-actions">
+          <button id="openFocus" class="focus-pill"><span>◎</span> Tập trung</button>
+          <button id="openTask" class="add-button"><span>＋</span> Thêm việc</button>
+        </div>
+      </header>
+
+      <section class="summary-grid" aria-label="Tổng quan hôm nay">
+        <article class="summary-card progress-card">
+          <div class="summary-copy">
+            <p class="eyebrow">Tiến độ hôm nay</p>
+            <strong id="progressText">0/0 công việc</strong>
+            <p id="progressMessage">Hãy bắt đầu với một việc nhỏ.</p>
+          </div>
+          <div id="progressRing" class="progress-ring" style="--progress: 0">
+            <span id="progressPercent">0%</span>
+          </div>
+        </article>
+        <article class="summary-card stat-card">
+          <span class="stat-icon coral">◷</span>
+          <div><p class="eyebrow">Thời gian dự kiến</p><strong id="plannedTime">0 giờ</strong></div>
+        </article>
+        <article class="summary-card stat-card">
+          <span class="stat-icon green">↗</span>
+          <div><p class="eyebrow">Chuỗi tập trung</p><strong id="focusStreak">0 phiên</strong></div>
+        </article>
+      </section>
+
+      <section class="content-grid">
+        <div class="task-panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Kế hoạch</p>
+              <h2 id="viewTitle">Lịch trình hôm nay</h2>
+            </div>
+            <div class="date-controls" aria-label="Chọn ngày">
+              <button id="prevDay" class="icon-button" aria-label="Ngày trước">←</button>
+              <button id="datePickerButton" class="date-button"><span id="selectedDateLabel">Hôm nay</span>⌄</button>
+              <input id="datePicker" type="date" aria-label="Chọn ngày" />
+              <button id="nextDay" class="icon-button" aria-label="Ngày sau">→</button>
+            </div>
+          </div>
+
+          <div id="taskList" class="task-list"></div>
+          <button id="emptyAdd" class="empty-state hidden">
+            <span class="empty-icon">＋</span>
+            <strong>Ngày này đang thật thoáng</strong>
+            <small>Thêm một công việc để bắt đầu</small>
+          </button>
+        </div>
+
+        <aside class="focus-card">
+          <div class="focus-card-head">
+            <div><p class="eyebrow">Không gian tập trung</p><h2>Pomodoro</h2></div>
+            <button id="focusSettings" class="icon-button" aria-label="Cài đặt bộ đếm">···</button>
+          </div>
+          <div class="timer-wrap">
+            <svg class="timer-ring" viewBox="0 0 220 220" aria-hidden="true">
+              <circle class="timer-track" cx="110" cy="110" r="96"></circle>
+              <circle id="timerProgress" class="timer-progress" cx="110" cy="110" r="96"></circle>
+            </svg>
+            <div class="timer-display">
+              <span id="timerMode">Tập trung</span>
+              <strong id="timerTime">25:00</strong>
+            </div>
+          </div>
+          <button id="timerToggle" class="timer-button">Bắt đầu phiên</button>
+          <button id="timerReset" class="text-button">Đặt lại</button>
+          <div class="session-dots" id="sessionDots" aria-label="Số phiên hôm nay"></div>
+          <p class="focus-note">Mỗi phiên hoàn thành là một bước nhỏ về phía trước.</p>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <div id="modalBackdrop" class="modal-backdrop hidden">
+    <section id="taskModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <div><p class="eyebrow">Lên lịch</p><h2 id="modalTitle">Thêm công việc mới</h2></div>
+        <button class="icon-button close-modal" aria-label="Đóng">×</button>
+      </div>
+      <form id="taskForm">
+        <input id="taskId" type="hidden" />
+        <label>Tên công việc<input id="taskTitle" type="text" placeholder="Ví dụ: Hoàn thiện bản thiết kế" maxlength="80" required autofocus /></label>
+        <div class="form-row">
+          <label>Ngày<input id="taskDate" type="date" required /></label>
+          <label>Bắt đầu<input id="taskTime" type="time" required /></label>
+        </div>
+        <div class="form-row">
+          <label>Thời lượng
+            <select id="taskDuration">
+              <option value="15">15 phút</option><option value="30">30 phút</option>
+              <option value="45">45 phút</option><option value="60" selected>1 giờ</option>
+              <option value="90">1 giờ 30</option><option value="120">2 giờ</option>
+            </select>
+          </label>
+          <label>Danh mục<select id="taskCategory"></select></label>
+        </div>
+        <label>Ghi chú<textarea id="taskNote" rows="3" placeholder="Thêm vài chi tiết nếu cần..."></textarea></label>
+        <div class="modal-actions">
+          <button type="button" id="deleteTask" class="danger-button hidden">Xóa</button>
+          <span></span>
+          <button type="button" class="secondary-button close-modal">Hủy</button>
+          <button type="submit" class="primary-button">Lưu công việc</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
