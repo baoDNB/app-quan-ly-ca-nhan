@@ -184,6 +184,7 @@
       <p class="section-kicker">Ghi chép</p>
       <h2 id="modalTitle">Thêm giao dịch</h2>
       <form id="transactionForm">
+        <input type="hidden" id="transactionId" />
         <div class="segmented">
           <label><input type="radio" name="type" value="expense" checked /><span>Khoản chi</span></label>
           <label><input type="radio" name="type" value="income" /><span>Khoản thu</span></label>
@@ -200,7 +201,7 @@
           <label class="field"><span>Ngày</span><input type="date" id="dateInput" required /></label>
           <label class="field"><span>Ghi chú <em>(không bắt buộc)</em></span><input type="text" id="noteInput" placeholder="Thêm ghi chú" maxlength="80" /></label>
         </div>
-        <button class="primary-btn submit-btn" type="submit">Lưu giao dịch</button>
+        <button class="primary-btn submit-btn" id="transactionSubmitBtn" type="submit">Lưu giao dịch</button>
       </form>
     </section>
   </div>

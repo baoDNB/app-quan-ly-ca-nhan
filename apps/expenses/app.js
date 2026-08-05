@@ -8,6 +8,7 @@ const categories = {
     { id: "shopping", name: "Mua sắm", icon: "◇", color: "#9686bf", bg: "#eeeaf7" },
     { id: "health", name: "Sức khỏe", icon: "+", color: "#da6f7d", bg: "#fae8eb" },
     { id: "fun", name: "Giải trí", icon: "☆", color: "#5f91ca", bg: "#e7eff8" },
+    { id: "debt", name: "Trả nợ", icon: "↘", color: "#b56b45", bg: "#f7e9df" },
     { id: "other", name: "Khác", icon: "•••", color: "#8b9994", bg: "#edf0ef" }
   ],
   income: [
@@ -52,7 +53,11 @@ function loadData() {
     return {
       ...saved,
       budgets: saved.budgets && typeof saved.budgets === "object" ? saved.budgets : {},
-      transactions: Array.isArray(saved.transactions) ? saved.transactions : [],
+      transactions: Array.isArray(saved.transactions) ? saved.transactions.map(item =>
+        item.type === "expense" && item.category === "other" && (item.note === "Thanh toán khoản nợ" || /^trả nợ\b/i.test(item.name || ""))
+          ? { ...item, category: "debt" }
+          : item
+      ) : [],
       debts: Array.isArray(saved.debts) ? saved.debts : []
     };
   }
@@ -227,7 +232,10 @@ function renderTransactions() {
       <div class="transaction-name"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.note || (item.type === "income" ? "Khoản thu" : "Khoản chi"))}</span></div>
       <div class="transaction-meta"><span class="transaction-category"><i class="category-dot" style="background:${category.color}"></i>${category.name}</span><span class="transaction-date">${date}</span></div>
       <div class="transaction-amount ${item.type}">${item.type === "income" ? "+" : "−"}${money(item.amount)}</div>
-      <button class="delete-btn" data-delete="${item.id}" aria-label="Xóa ${escapeHtml(item.name)}">×</button>
+      <div class="transaction-actions">
+        <button class="edit-btn" data-edit="${item.id}" aria-label="Sửa ${escapeHtml(item.name)}">✎</button>
+        <button class="delete-btn" data-delete="${item.id}" aria-label="Xóa ${escapeHtml(item.name)}">×</button>
+      </div>
     </div>`;
   }).join("");
   $("#emptyState").hidden = filtered.length !== 0;
@@ -246,8 +254,34 @@ function showToast(message, options = {}) {
 function syncModalState() {
   document.body.classList.toggle("modal-open", ["#transactionModal", "#budgetModal", "#debtModal", "#repaymentModal"].some(selector => !$(selector).hidden));
 }
-function openModal() { $("#transactionModal").hidden = false; syncModalState(); $("#dateInput").value = selectedMonth === currentMonth() ? localDate() : `${selectedMonth}-01`; setTimeout(() => $("#amountInput").focus(), 50); }
-function closeModal() { $("#transactionModal").hidden = true; syncModalState(); $("#transactionForm").reset(); fillCategories("expense"); }
+function openModal(transaction = null) {
+  $("#transactionForm").reset();
+  const type = transaction?.type || "expense";
+  $("#transactionId").value = transaction?.id || "";
+  document.querySelector(`input[name="type"][value="${type}"]`).checked = true;
+  document.querySelectorAll('input[name="type"]').forEach(input => { input.disabled = Boolean(transaction?.debtId); });
+  fillCategories(type);
+  $("#amountInput").value = transaction ? new Intl.NumberFormat("vi-VN").format(transaction.amount) : "";
+  $("#nameInput").value = transaction?.name || "";
+  $("#categoryInput").value = transaction?.category || categories[type][0].id;
+  $("#categoryInput").disabled = Boolean(transaction?.debtId);
+  $("#dateInput").value = transaction?.date || (selectedMonth === currentMonth() ? localDate() : `${selectedMonth}-01`);
+  $("#noteInput").value = transaction?.note || "";
+  $("#modalTitle").textContent = transaction?.debtId ? "Sửa giao dịch trả nợ" : transaction ? "Sửa giao dịch" : "Thêm giao dịch";
+  $("#transactionSubmitBtn").textContent = transaction ? "Cập nhật giao dịch" : "Lưu giao dịch";
+  $("#transactionModal").hidden = false;
+  syncModalState();
+  setTimeout(() => $("#amountInput").focus(), 50);
+}
+function closeModal() {
+  $("#transactionModal").hidden = true;
+  $("#transactionForm").reset();
+  $("#transactionId").value = "";
+  document.querySelectorAll('input[name="type"]').forEach(input => { input.disabled = false; });
+  $("#categoryInput").disabled = false;
+  fillCategories("expense");
+  syncModalState();
+}
 function openDebtModal() { $("#debtModal").hidden = false; syncModalState(); setTimeout(() => $("#debtCreditorInput").focus(), 50); }
 function closeDebtModal() { $("#debtModal").hidden = true; $("#debtForm").reset(); syncModalState(); }
 function openRepaymentModal(debt) {
@@ -363,8 +397,8 @@ $("#repaymentForm").addEventListener("submit", event => {
   debt.updatedAt = localDate();
   data.transactions.push({
     id: crypto.randomUUID(), type: "expense", amount,
-    name: `Trả nợ ${debt.creditor}`, category: "other", date,
-    note: "Thanh toán khoản nợ"
+    name: `Trả nợ ${debt.creditor}`, category: "debt", date,
+    note: "Thanh toán khoản nợ", debtId: debt.id
   });
   selectedMonth = date.slice(0, 7); $("#monthFilter").value = selectedMonth;
   saveData(); closeRepaymentModal(); render();
@@ -373,21 +407,56 @@ $("#repaymentForm").addEventListener("submit", event => {
 
 $("#transactionForm").addEventListener("submit", event => {
   event.preventDefault();
-  const type = new FormData(event.target).get("type");
+  const id = $("#transactionId").value;
+  const existing = id ? data.transactions.find(item => String(item.id) === id) : null;
+  const requestedType = new FormData(event.target).get("type");
+  const type = existing?.debtId ? "expense" : requestedType;
   const amount = parseAmount($("#amountInput").value);
   if (!amount) return showToast("Vui lòng nhập số tiền hợp lệ");
-  data.transactions.push({ id: crypto.randomUUID(), type, amount, name: $("#nameInput").value.trim(), category: $("#categoryInput").value, date: $("#dateInput").value, note: $("#noteInput").value.trim() });
+  const transaction = {
+    type, amount, name: $("#nameInput").value.trim(),
+    category: existing?.debtId ? "debt" : $("#categoryInput").value,
+    date: $("#dateInput").value, note: $("#noteInput").value.trim()
+  };
+  if (existing) {
+    if (existing.debtId) {
+      const debt = data.debts.find(item => String(item.id) === String(existing.debtId));
+      if (debt) {
+        const numbers = debtNumbers(debt);
+        const maximum = numbers.remaining + Number(existing.amount);
+        if (amount > maximum) return showToast(`Khoản trả tối đa là ${money(maximum)}`);
+        debt.remaining = Math.max(0, Math.min(numbers.total, numbers.remaining + Number(existing.amount) - amount));
+        debt.updatedAt = localDate();
+      }
+    }
+    Object.assign(existing, transaction);
+  } else {
+    data.transactions.push({ id: crypto.randomUUID(), ...transaction });
+  }
   selectedMonth = $("#dateInput").value.slice(0, 7); $("#monthFilter").value = selectedMonth;
-  saveData(); closeModal(); render(); showToast("Đã lưu giao dịch ✓");
+  saveData(); closeModal(); render(); showToast(existing ? "Đã cập nhật giao dịch ✓" : "Đã lưu giao dịch ✓");
 });
 
 $("#transactionList").addEventListener("click", event => {
+  const editButton = event.target.closest("[data-edit]");
+  if (editButton) {
+    const transaction = data.transactions.find(item => String(item.id) === editButton.dataset.edit);
+    if (transaction) openModal(transaction);
+    return;
+  }
   const button = event.target.closest("[data-delete]");
   if (!button) return;
   const index = data.transactions.findIndex(item => String(item.id) === button.dataset.delete);
   if (index < 0) return showToast("Không tìm thấy giao dịch để xóa");
   clearTimeout(undoTimer);
   pendingDeletion = { item: data.transactions[index], index };
+  if (pendingDeletion.item.debtId) {
+    const debt = data.debts.find(item => String(item.id) === String(pendingDeletion.item.debtId));
+    if (debt) {
+      const numbers = debtNumbers(debt);
+      debt.remaining = Math.min(numbers.total, numbers.remaining + Number(pendingDeletion.item.amount));
+    }
+  }
   data.transactions.splice(index, 1);
   saveData(); render(); showToast("Đã xóa giao dịch", { undo: true, duration: 5000 });
   undoTimer = setTimeout(() => { pendingDeletion = null; }, 5000);
@@ -397,6 +466,13 @@ $("#undoDeleteBtn").addEventListener("click", () => {
   if (!pendingDeletion) return;
   clearTimeout(undoTimer);
   data.transactions.splice(Math.min(pendingDeletion.index, data.transactions.length), 0, pendingDeletion.item);
+  if (pendingDeletion.item.debtId) {
+    const debt = data.debts.find(item => String(item.id) === String(pendingDeletion.item.debtId));
+    if (debt) {
+      const numbers = debtNumbers(debt);
+      debt.remaining = Math.max(0, numbers.remaining - Number(pendingDeletion.item.amount));
+    }
+  }
   pendingDeletion = null;
   saveData(); render(); showToast("Đã khôi phục giao dịch ✓");
 });
