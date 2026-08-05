@@ -196,6 +196,7 @@ $$('.close-modal').forEach(btn => btn.addEventListener("click", closeModal));
 els.backdrop.addEventListener("click", e => { if (e.target === els.backdrop) closeModal(); });
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
+  closeSidebar();
   if (!els.focusOverlay.classList.contains("hidden")) closeFocusOverlay();
   else closeModal();
 });
@@ -212,11 +213,25 @@ els.datePicker.addEventListener("change", () => { state.selectedDate = els.dateP
 function setActiveNav(view) {
   $$(".nav-item").forEach(btn => btn.classList.toggle("active", btn.dataset.view === view));
 }
+function closeSidebar() {
+  $(".sidebar").classList.remove("open");
+  $("#sidebarOverlay").classList.remove("open");
+  document.body.classList.remove("sidebar-open");
+  $("#menuButton").setAttribute("aria-expanded", "false");
+}
+function openSidebar() {
+  $(".sidebar").classList.add("open");
+  $("#sidebarOverlay").classList.add("open");
+  document.body.classList.add("sidebar-open");
+  $("#menuButton").setAttribute("aria-expanded", "true");
+}
 $$('.nav-item').forEach(btn => btn.addEventListener("click", () => {
   state.view = btn.dataset.view; if (state.view === "today") state.selectedDate = today();
-  setActiveNav(state.view); render(); $(".sidebar").classList.remove("open");
+  setActiveNav(state.view); render(); closeSidebar();
 }));
-$("#menuButton").addEventListener("click", () => $(".sidebar").classList.toggle("open"));
+$("#menuButton").setAttribute("aria-expanded", "false");
+$("#menuButton").addEventListener("click", () => $(".sidebar").classList.contains("open") ? closeSidebar() : openSidebar());
+$("#sidebarOverlay").addEventListener("click", closeSidebar);
 
 let timerInterval = null;
 let audioContext = null;
