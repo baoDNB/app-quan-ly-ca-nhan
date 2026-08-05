@@ -124,13 +124,13 @@ function renderLabels() {
 
 function updateHeading() {
   const headings = {
-    all: ['KHÔNG GIAN CỦA BẠN', 'Mọi <em>ý tưởng</em>', 'Thu thập suy nghĩ, kế hoạch và những điều bạn không muốn quên.'],
-    pinned: ['QUAN TRỌNG', 'Ghi chú <em>đã ghim</em>', 'Những ý tưởng quan trọng nhất luôn nằm trong tầm mắt.'],
-    trash: ['LƯU TRỮ TẠM THỜI', 'Thùng <em>rác</em>', 'Mở ghi chú để khôi phục hoặc xóa vĩnh viễn.']
+    all: ['KHÔNG GIAN CỦA BẠN', 'Mọi ý tưởng', 'Thu thập suy nghĩ, kế hoạch và những điều bạn không muốn quên.'],
+    pinned: ['QUAN TRỌNG', 'Ghi chú đã ghim', 'Những ý tưởng quan trọng nhất luôn nằm trong tầm mắt.'],
+    trash: ['LƯU TRỮ TẠM THỜI', 'Thùng rác', 'Mở ghi chú để khôi phục hoặc xóa vĩnh viễn.']
   };
   let value = headings[state.filter];
-  if (state.label) value = ['BỘ SƯU TẬP', `<em>${escapeHTML(state.label)}</em>`, `Tất cả ghi chú được gắn nhãn ${escapeHTML(state.label)}.`];
-  els.eyebrow.textContent = value[0]; els.title.innerHTML = value[1]; els.subtitle.textContent = value[2];
+  if (state.label) value = ['BỘ SƯU TẬP', state.label, `Tất cả ghi chú được gắn nhãn ${state.label}.`];
+  els.eyebrow.textContent = value[0]; els.title.textContent = value[1]; els.subtitle.textContent = value[2];
 }
 
 function updateCounts() {
