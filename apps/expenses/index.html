@@ -22,9 +22,6 @@
         <button class="nav-item active" data-view="overview">
           <span class="nav-icon">⌂</span> Tổng quan
         </button>
-        <button class="nav-item" data-view="transactions">
-          <span class="nav-icon">↔</span> Giao dịch
-        </button>
         <button class="nav-item" data-view="budget">
           <span class="nav-icon">◎</span> Ngân sách
         </button>
@@ -33,6 +30,9 @@
         </button>
         <button class="nav-item" data-view="funds">
           <span class="nav-icon">♢</span> Quỹ
+        </button>
+        <button class="nav-item" data-view="transactions">
+          <span class="nav-icon">↔</span> Giao dịch
         </button>
       </nav>
 
@@ -293,6 +293,7 @@
       <p class="section-kicker">Quản lý quỹ</p>
       <h2 id="fundModalTitle">Cập nhật quỹ</h2>
       <p class="fund-current" id="fundCurrentBalance">Hiện có 0 ₫</p>
+      <p class="fund-month-summary" id="fundMonthSummary">Số dư khả dụng của tháng: 0 ₫</p>
       <form id="fundForm">
         <input type="hidden" id="fundTypeInput" />
         <div class="segmented fund-action-segmented">
@@ -300,10 +301,11 @@
           <label><input type="radio" name="fundAction" value="withdraw" /><span>Rút khỏi quỹ</span></label>
         </div>
         <label class="field amount-field"><span>Số tiền <em>(có thể để trống nếu chỉ sửa mục tiêu)</em></span><div><input type="text" id="fundAmountInput" inputmode="numeric" placeholder="0" /><b>₫</b></div></label>
-        <div class="form-row">
-          <label class="field"><span>Mục tiêu quỹ</span><input type="text" id="fundTargetInput" inputmode="numeric" placeholder="5.000.000" /></label>
-          <label class="field"><span>Ngày thực hiện</span><input type="date" id="fundDateInput" required /></label>
+        <div class="fund-amount-helper">
+          <span id="fundAmountHint">Tiền sẽ được lấy từ số dư tháng đang xem.</span>
+          <button id="useFullSurplusBtn" type="button">Dùng toàn bộ tiền dư</button>
         </div>
+        <label class="field"><span>Mục tiêu quỹ</span><input type="text" id="fundTargetInput" inputmode="numeric" placeholder="5.000.000" /></label>
         <button class="primary-btn submit-btn" type="submit">Lưu thay đổi</button>
       </form>
     </section>

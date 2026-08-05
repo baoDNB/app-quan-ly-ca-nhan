@@ -98,12 +98,21 @@ function shiftMonth(monthValue, amount) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
+function monthLabel(monthValue) {
+  const [year, month] = monthValue.split("-");
+  return `tháng ${Number(month)}/${year}`;
+}
+
 function monthCashFlow(monthValue) {
   return data.transactions.filter(item => item.date.startsWith(monthValue)).reduce((total, item) => total + (item.type === "income" ? item.amount : -item.amount), 0);
 }
 
 function monthFundAllocation(monthValue) {
   return Object.values(data.funds).flatMap(fund => fund.movements).filter(item => item.date.startsWith(monthValue)).reduce((total, item) => total + (item.action === "withdraw" ? -item.amount : item.amount), 0);
+}
+
+function availableForMonth(monthValue) {
+  return carryIntoMonth(monthValue) + monthCashFlow(monthValue) - monthFundAllocation(monthValue);
 }
 
 function carryIntoMonth(monthValue) {
@@ -409,12 +418,24 @@ function openFundModal(type) {
   $("#fundModalTitle").textContent = fund.name;
   $("#fundCurrentBalance").textContent = `Hiện có ${money(fund.balance)}`;
   $("#fundTargetInput").value = fund.target ? new Intl.NumberFormat("vi-VN").format(fund.target) : "";
-  $("#fundDateInput").value = selectedMonth === currentMonth() ? localDate() : `${selectedMonth}-01`;
+  syncFundActionHint();
   $("#fundModal").hidden = false;
   syncModalState();
   setTimeout(() => $("#fundAmountInput").focus(), 50);
 }
 function closeFundModal() { $("#fundModal").hidden = true; $("#fundForm").reset(); syncModalState(); }
+function syncFundActionHint() {
+  const fund = data.funds[$("#fundTypeInput").value];
+  if (!fund) return;
+  const action = new FormData($("#fundForm")).get("fundAction") || "deposit";
+  const available = Math.max(0, availableForMonth(selectedMonth));
+  $("#fundMonthSummary").textContent = `Số dư khả dụng ${monthLabel(selectedMonth)}: ${money(available)}`;
+  $("#fundAmountHint").textContent = action === "deposit"
+    ? `Nạp quỹ sẽ trừ trực tiếp từ tiền dư ${monthLabel(selectedMonth)}.`
+    : `Rút quỹ sẽ trả tiền về số dư ${monthLabel(selectedMonth)}.`;
+  $("#useFullSurplusBtn").hidden = action !== "deposit" || available <= 0;
+  $("#useFullSurplusBtn").dataset.amount = String(available);
+}
 function parseAmount(value) { return Number(value.replace(/\D/g, "")); }
 function formatAmountInput(event) { const value = parseAmount(event.target.value); event.target.value = value ? new Intl.NumberFormat("vi-VN").format(value) : ""; }
 
@@ -452,6 +473,12 @@ $("#debtPaidInput").addEventListener("input", formatAmountInput);
 $("#debtPaymentInput").addEventListener("input", formatAmountInput);
 $("#fundAmountInput").addEventListener("input", formatAmountInput);
 $("#fundTargetInput").addEventListener("input", formatAmountInput);
+document.querySelectorAll('input[name="fundAction"]').forEach(input => input.addEventListener("change", syncFundActionHint));
+$("#useFullSurplusBtn").addEventListener("click", event => {
+  const amount = Number(event.currentTarget.dataset.amount) || 0;
+  $("#fundAmountInput").value = amount ? new Intl.NumberFormat("vi-VN").format(amount) : "";
+  $("#fundAmountInput").focus();
+});
 $("#monthFilter").addEventListener("change", event => {
   selectedMonth = event.target.value || currentMonth();
   $("#dateFrom").value = "";
@@ -503,23 +530,21 @@ $("#fundForm").addEventListener("submit", event => {
   const targetRaw = $("#fundTargetInput").value.trim();
   const target = targetRaw ? parseAmount(targetRaw) : fund.target;
   const action = new FormData(event.target).get("fundAction");
-  const date = $("#fundDateInput").value;
+  const month = selectedMonth;
+  const date = selectedMonth === currentMonth() ? localDate() : `${selectedMonth}-01`;
   if (!amount && target === fund.target) return showToast("Nhập số tiền hoặc thay đổi mục tiêu quỹ");
   if (action === "withdraw" && amount > fund.balance) return showToast(`Quỹ chỉ còn ${money(fund.balance)}`);
   if (action === "deposit" && amount) {
-    const month = date.slice(0, 7);
-    const available = carryIntoMonth(month) + monthCashFlow(month) - monthFundAllocation(month);
+    const available = availableForMonth(month);
     if (amount > Math.max(0, available)) return showToast(`Số dư khả dụng chỉ còn ${money(Math.max(0, available))}`);
   }
   fund.target = target;
   if (amount) {
     fund.balance = Math.max(0, fund.balance + (action === "withdraw" ? -amount : amount));
     fund.movements.push({ id: crypto.randomUUID(), action, amount, date });
-    selectedMonth = date.slice(0, 7);
-    $("#monthFilter").value = selectedMonth;
   }
   saveData(); closeFundModal(); render();
-  showToast(amount ? `${action === "withdraw" ? "Đã rút khỏi" : "Đã nạp vào"} ${fund.name} ✓` : "Đã cập nhật mục tiêu quỹ ✓");
+  showToast(amount ? `${action === "withdraw" ? "Đã rút khỏi" : "Đã nạp vào"} ${fund.name} từ ${monthLabel(month)} ✓` : "Đã cập nhật mục tiêu quỹ ✓");
 });
 
 $("#debtForm").addEventListener("submit", event => {

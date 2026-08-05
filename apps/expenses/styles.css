@@ -251,8 +251,14 @@ h1 { font-size: clamp(28px, 3.2vw, 40px); line-height: 1.14; letter-spacing: -1.
 .rollover-card .fund-copy > strong, .rollover-card .rollover-next strong { color: #fff; }
 .rollover-next { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.12); }
 .rollover-next strong { font-size: 14px; white-space: nowrap; }
-.fund-current { margin: -12px 0 18px; padding: 10px 12px; border-radius: 11px; color: var(--green); background: var(--green-light); font-size: 11px; font-weight: 700; }
+.fund-current { margin: -12px 0 8px; padding: 10px 12px; border-radius: 11px; color: var(--green); background: var(--green-light); font-size: 11px; font-weight: 700; }
+.fund-month-summary { margin: 0 0 18px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 11px; color: var(--ink); background: #f7f9f6; font-size: 11px; font-weight: 700; }
 .fund-action-segmented { margin-bottom: 18px; }
+.fund-amount-helper { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: -5px 0 17px; }
+.fund-amount-helper span { color: var(--muted); font-size: 9px; line-height: 1.45; }
+.fund-amount-helper button { flex: none; padding: 6px 9px; border: 0; border-radius: 8px; color: var(--green); background: var(--green-light); font-size: 9px; font-weight: 800; }
+.fund-amount-helper button:hover { color: #fff; background: var(--green); }
+.fund-amount-helper button[hidden] { display: none; }
 
 .transactions-panel { margin-top: 16px; padding-bottom: 14px; }
 .list-tools input, .list-tools select { min-height: 40px; border-radius: 12px; background: #f7f9f6; font-size: 12px; }
@@ -328,6 +334,7 @@ h1 { font-size: clamp(28px, 3.2vw, 40px); line-height: 1.14; letter-spacing: -1.
   .debt-heading { align-items: flex-start; }
   .fund-heading { align-items: flex-start; flex-direction: column; }
   .fund-heading-note { text-align: left; }
+  .fund-amount-helper { align-items: flex-start; flex-direction: column; }
   .debt-summary-grid { grid-template-columns: 1fr; }
   .debt-summary-grid > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .debt-summary-grid span { margin: 0; }
