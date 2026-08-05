@@ -258,8 +258,10 @@ function openModal(transaction = null) {
   $("#transactionForm").reset();
   const type = transaction?.type || "expense";
   $("#transactionId").value = transaction?.id || "";
-  document.querySelector(`input[name="type"][value="${type}"]`).checked = true;
-  document.querySelectorAll('input[name="type"]').forEach(input => { input.disabled = Boolean(transaction?.debtId); });
+  document.querySelectorAll('input[name="type"]').forEach(input => {
+    input.checked = input.value === type;
+    input.disabled = Boolean(transaction?.debtId);
+  });
   fillCategories(type);
   $("#amountInput").value = transaction ? new Intl.NumberFormat("vi-VN").format(transaction.amount) : "";
   $("#nameInput").value = transaction?.name || "";
