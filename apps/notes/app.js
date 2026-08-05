@@ -222,8 +222,8 @@ let toastTimer;
 function showToast(message) { clearTimeout(toastTimer); els.toast.querySelector('p').textContent = message; els.toast.classList.add('show'); toastTimer = setTimeout(() => els.toast.classList.remove('show'), 2400); }
 function closeSidebar() { $('sidebar').classList.remove('open'); $('sidebarOverlay').classList.remove('open'); }
 
-document.querySelectorAll('[data-filter]').forEach(el => el.addEventListener('click', () => setFilter(el.dataset.filter)));
-$('newNoteButton').addEventListener('click', () => openEditor());
+document.querySelectorAll('[data-filter]').forEach(el => el.addEventListener('click', () => { setFilter(el.dataset.filter); closeSidebar(); }));
+$('newNoteButton').addEventListener('click', () => { closeSidebar(); openEditor(); });
 $('emptyCreateButton').addEventListener('click', () => state.filter === 'trash' ? null : openEditor());
 $('closeEditorButton').addEventListener('click', closeEditor);
 $('saveButton').addEventListener('click', saveNote);
@@ -253,7 +253,7 @@ $('sidebarClose').addEventListener('click', closeSidebar); $('sidebarOverlay').a
 document.addEventListener('keydown', event => {
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); els.search.focus(); }
   if ((event.metaKey || event.ctrlKey) && event.key === 'Enter' && els.modal.classList.contains('open')) { event.preventDefault(); saveNote(); }
-  if (event.key === 'Escape' && els.modal.classList.contains('open')) closeEditor();
+  if (event.key === 'Escape') { closeSidebar(); if (els.modal.classList.contains('open')) closeEditor(); }
   if (event.key.toLowerCase() === 'n' && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) openEditor();
 });
 
