@@ -179,6 +179,7 @@ html { scroll-behavior: smooth; overflow-x: hidden; }
 body { background: radial-gradient(circle at 82% 0%, #eef5e6 0, transparent 28%), var(--cream); }
 body { overflow-x: hidden; }
 body.modal-open { overflow: hidden; }
+body.sidebar-open { overflow: hidden; }
 button, input, select { -webkit-tap-highlight-color: transparent; }
 button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid rgba(46, 129, 101, .25); outline-offset: 2px; }
 
@@ -295,6 +296,7 @@ h1 { font-size: clamp(28px, 3.2vw, 40px); line-height: 1.14; letter-spacing: -1.
 .field input, .field select { min-height: 46px; border-radius: 13px; }
 .amount-field input { min-height: auto; }
 .mobile-fab { display: none; }
+.expense-menu-button, .sidebar-overlay { display: none; }
 
 @media (max-width: 1100px) {
   .app-shell { grid-template-columns: 220px 1fr; }
@@ -307,10 +309,21 @@ h1 { font-size: clamp(28px, 3.2vw, 40px); line-height: 1.14; letter-spacing: -1.
 
 @media (max-width: 760px) {
   body { background: var(--cream); }
-  .sidebar { inset: auto 0 0; width: auto; height: 72px; padding: 8px 12px max(8px, env(safe-area-inset-bottom)); border-radius: 20px 20px 0 0; }
-  .nav-item.active { background: rgba(255,255,255,.14); color: #fff; box-shadow: none; }
-  .main-content { margin-left: 0; padding: 22px 15px 112px; }
+  .sidebar { inset: 0 auto 0 0; z-index: 30; width: min(82vw, 280px); height: 100dvh; padding: 26px 20px 22px; flex-direction: column; justify-content: flex-start; border-radius: 0 22px 22px 0; box-shadow: 18px 0 50px rgba(7,31,25,.24); transform: translateX(-105%); transition: transform .25s ease; }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-overlay { position: fixed; inset: 0; z-index: 25; display: block; background: rgba(8,31,25,.42); opacity: 0; visibility: hidden; transition: opacity .22s, visibility .22s; backdrop-filter: blur(2px); }
+  .sidebar-overlay.open { opacity: 1; visibility: visible; }
+  .brand { display: flex; }
+  .sidebar-card { display: block; }
+  .copyright { display: block; }
+  .nav { display: grid; width: auto; margin-top: 38px; gap: 5px; }
+  .nav-item { padding: 14px 15px; text-align: left; font-size: 13px; }
+  .nav-icon { display: inline-grid; width: 30px; font-size: 20px; }
+  .nav-item.active { background: #fff; color: var(--green-deep); box-shadow: 0 10px 30px rgba(0,0,0,.13); }
+  .main-content { margin-left: 0; padding: 18px 15px 34px; }
   .topbar { margin-bottom: 22px; }
+  .topbar > div:first-of-type { min-width: 0; flex: 1; }
+  .expense-menu-button { display: grid; place-items: center; flex: 0 0 auto; width: 42px; height: 42px; padding: 0; border: 1px solid var(--line); border-radius: 13px; background: #fff; color: var(--green-deep); box-shadow: 0 6px 18px rgba(23,107,85,.08); font-size: 21px; }
   .welcome-copy { font-size: 12px; }
   .topbar-actions { padding-top: 0; }
   .summary-grid { gap: 12px; }
@@ -325,7 +338,7 @@ h1 { font-size: clamp(28px, 3.2vw, 40px); line-height: 1.14; letter-spacing: -1.
   .debt-list { grid-template-columns: 1fr; }
   .fund-grid { grid-template-columns: 1fr; }
   .rollover-card { grid-column: auto; }
-  .mobile-fab { display: grid; place-items: center; position: fixed; z-index: 16; right: 18px; bottom: 84px; width: 54px; height: 54px; border: 4px solid var(--cream); border-radius: 18px; background: var(--green); color: #fff; box-shadow: 0 12px 28px rgba(23,107,85,.32); font-size: 24px; }
+  .mobile-fab { display: grid; place-items: center; position: fixed; z-index: 16; right: 18px; bottom: max(18px, env(safe-area-inset-bottom)); width: 54px; height: 54px; border: 4px solid var(--cream); border-radius: 18px; background: var(--green); color: #fff; box-shadow: 0 12px 28px rgba(23,107,85,.32); font-size: 24px; }
 }
 
 @media (max-width: 480px) {

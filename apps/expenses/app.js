@@ -451,6 +451,18 @@ function syncFundActionHint() {
 }
 function parseAmount(value) { return Number(value.replace(/\D/g, "")); }
 function formatAmountInput(event) { const value = parseAmount(event.target.value); event.target.value = value ? new Intl.NumberFormat("vi-VN").format(value) : ""; }
+function openExpenseSidebar() {
+  $(".sidebar").classList.add("open");
+  $("#sidebarOverlay").classList.add("open");
+  document.body.classList.add("sidebar-open");
+  $("#expenseMenuButton").setAttribute("aria-expanded", "true");
+}
+function closeExpenseSidebar() {
+  $(".sidebar").classList.remove("open");
+  $("#sidebarOverlay").classList.remove("open");
+  document.body.classList.remove("sidebar-open");
+  $("#expenseMenuButton").setAttribute("aria-expanded", "false");
+}
 
 $("#todayLabel").textContent = new Date().toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 $("#monthFilter").value = selectedMonth;
@@ -458,6 +470,10 @@ fillCategories("expense");
 fillHistoryCategoryFilter();
 render();
 
+$("#expenseMenuButton").addEventListener("click", () => {
+  $(".sidebar").classList.contains("open") ? closeExpenseSidebar() : openExpenseSidebar();
+});
+$("#sidebarOverlay").addEventListener("click", closeExpenseSidebar);
 $("#openTransactionBtn").addEventListener("click", () => openModal());
 $("#mobileAddBtn").addEventListener("click", () => openModal());
 $("#emptyAddBtn").addEventListener("click", () => openModal());
@@ -478,6 +494,7 @@ $(".funds-panel").addEventListener("click", event => {
 });
 document.addEventListener("keydown", event => {
   if (event.key !== "Escape") return;
+  closeExpenseSidebar();
   closeModal(); closeTransactionDetail(); closeDebtModal(); closeRepaymentModal(); closeFundModal(); $("#budgetModal").hidden = true; syncModalState();
 });
 document.querySelectorAll('input[name="type"]').forEach(input => input.addEventListener("change", event => fillCategories(event.target.value)));
@@ -708,4 +725,5 @@ document.querySelectorAll(".nav-item").forEach(button => button.addEventListener
   const target = targets[button.dataset.view] || ".topbar";
   document.querySelector(target).scrollIntoView({ behavior: "smooth", block: "start" });
   if (button.dataset.view === "budget") setTimeout(openBudget, 250);
+  closeExpenseSidebar();
 }));
