@@ -30,11 +30,25 @@ const localDate = (date = new Date()) => {
 };
 const currentMonth = () => localDate().slice(0, 7);
 
+function defaultFunds(saved = {}) {
+  const build = (type, name) => {
+    const source = saved[type] || {};
+    return {
+      name,
+      balance: Math.max(0, Number(source.balance) || 0),
+      target: Math.max(0, Number(source.target) || 0),
+      movements: Array.isArray(source.movements) ? source.movements.filter(item => item?.date && Number(item.amount) > 0) : []
+    };
+  };
+  return { travel: build("travel", "Quỹ đi chơi"), savings: build("savings", "Tiền để dành") };
+}
+
 function getSeedData() {
   const month = currentMonth();
   return {
     budgets: { [month]: 12000000 },
     debts: [],
+    funds: defaultFunds(),
     transactions: [
       { id: crypto.randomUUID(), type: "income", amount: 18000000, name: "Lương tháng", category: "salary", date: `${month}-01`, note: "" },
       { id: crypto.randomUUID(), type: "expense", amount: 1450000, name: "Tiền thuê nhà", category: "home", date: `${month}-03`, note: "" },
@@ -58,7 +72,8 @@ function loadData() {
           ? { ...item, category: "debt" }
           : item
       ) : [],
-      debts: Array.isArray(saved.debts) ? saved.debts : []
+      debts: Array.isArray(saved.debts) ? saved.debts : [],
+      funds: defaultFunds(saved.funds)
     };
   }
   catch { return getSeedData(); }
@@ -76,6 +91,37 @@ const TRANSACTIONS_PER_PAGE = 10;
 function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
 function getCategory(type, id) { return categories[type].find(item => item.id === id) || categories[type][categories[type].length - 1]; }
 function monthTransactions() { return data.transactions.filter(item => item.date.startsWith(selectedMonth)); }
+
+function shiftMonth(monthValue, amount) {
+  const [year, month] = monthValue.split("-").map(Number);
+  const date = new Date(year, month - 1 + amount, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function monthCashFlow(monthValue) {
+  return data.transactions.filter(item => item.date.startsWith(monthValue)).reduce((total, item) => total + (item.type === "income" ? item.amount : -item.amount), 0);
+}
+
+function monthFundAllocation(monthValue) {
+  return Object.values(data.funds).flatMap(fund => fund.movements).filter(item => item.date.startsWith(monthValue)).reduce((total, item) => total + (item.action === "withdraw" ? -item.amount : item.amount), 0);
+}
+
+function carryIntoMonth(monthValue) {
+  const trackedMonths = [
+    ...data.transactions.map(item => item.date.slice(0, 7)),
+    ...Object.values(data.funds).flatMap(fund => fund.movements.map(item => item.date.slice(0, 7)))
+  ].filter(month => month < monthValue).sort();
+  if (!trackedMonths.length) return 0;
+  let cursor = trackedMonths[0];
+  let carry = 0;
+  let guard = 0;
+  while (cursor < monthValue && guard < 600) {
+    carry = Math.max(0, carry + monthCashFlow(cursor) - monthFundAllocation(cursor));
+    cursor = shiftMonth(cursor, 1);
+    guard += 1;
+  }
+  return carry;
+}
 
 function weekRange(dateValue) {
   const [year, month, day] = dateValue.split("-").map(Number);
@@ -100,10 +146,14 @@ function render() {
   const expenseItems = items.filter(item => item.type === "expense");
   const income = incomeItems.reduce((sum, item) => sum + item.amount, 0);
   const expense = expenseItems.reduce((sum, item) => sum + item.amount, 0);
-  const balance = income - expense;
+  const carryIn = carryIntoMonth(selectedMonth);
+  const fundAllocation = monthFundAllocation(selectedMonth);
+  const balance = carryIn + income - expense - fundAllocation;
+  const carryOut = Math.max(0, balance);
   const budget = data.budgets[selectedMonth] || 0;
   const budgetLeft = budget - expense;
-  const savingRate = income ? Math.max(0, Math.round(balance / income * 100)) : 0;
+  const availableIncome = income + carryIn;
+  const savingRate = availableIncome ? Math.max(0, Math.round(balance / availableIncome * 100)) : 0;
   const referenceDate = selectedMonth === currentMonth() ? localDate() : `${selectedMonth}-01`;
   const week = weekRange(referenceDate);
   const weeklyExpense = data.transactions
@@ -118,8 +168,8 @@ function render() {
   $("#budgetLeftValue").textContent = budget ? money(budgetLeft) : "Chưa đặt";
   $("#incomeCount").textContent = `${incomeItems.length} khoản thu`;
   $("#expenseCount").textContent = `${expenseItems.length} khoản chi`;
-  $("#balanceMessage").textContent = balance >= 0 ? `Bạn đang giữ lại ${savingRate}% thu nhập` : "Chi tiêu đang vượt thu nhập";
-  $("#savingRateSide").textContent = `${savingRate}% thu nhập đã tiết kiệm`;
+  $("#balanceMessage").textContent = balance < 0 ? "Chi tiêu đang vượt số tiền khả dụng" : carryIn ? `Có ${money(carryIn)} chuyển từ tháng trước` : `Bạn đang giữ lại ${savingRate}% tiền khả dụng`;
+  $("#savingRateSide").textContent = `${money(data.funds.savings.balance)} đã để dành`;
   $("#budgetCaption").textContent = budget ? `Đã dùng ${Math.round(expense / budget * 100)}% của ${shortMoney(budget)}` : "Nhấn vào đây để đặt hạn mức";
   $("#budgetProgress").style.width = budget ? `${Math.min(100, expense / budget * 100)}%` : "0%";
   $("#budgetProgress").style.background = expense > budget && budget ? "#ef7d63" : "#f3c969";
@@ -127,7 +177,22 @@ function render() {
   renderBars(expenseItems);
   renderCategories(expenseItems, expense);
   renderDebts();
+  renderFunds(carryIn, carryOut);
   renderTransactions();
+}
+
+function renderFunds(carryIn, carryOut) {
+  $("#carryInValue").textContent = money(carryIn);
+  $("#carryOutValue").textContent = money(carryOut);
+  $("#carryInCaption").textContent = carryIn ? `Đã nhận từ ${shiftMonth(selectedMonth, -1)}` : "Tháng trước không có tiền dư";
+  ["travel", "savings"].forEach(type => {
+    const fund = data.funds[type];
+    const prefix = type === "travel" ? "travelFund" : "savingsFund";
+    const progress = fund.target ? Math.min(100, Math.round(fund.balance / fund.target * 100)) : 0;
+    $(`#${prefix}Balance`).textContent = money(fund.balance);
+    $(`#${prefix}Progress`).style.width = `${progress}%`;
+    $(`#${prefix}Caption`).textContent = fund.target ? `${progress}% mục tiêu ${money(fund.target)}` : "Chưa đặt mục tiêu";
+  });
 }
 
 function renderBars(expenses) {
@@ -291,7 +356,7 @@ function showToast(message, options = {}) {
   toastTimer = setTimeout(() => $("#toast").classList.remove("show"), options.duration || 2400);
 }
 function syncModalState() {
-  document.body.classList.toggle("modal-open", ["#transactionModal", "#budgetModal", "#debtModal", "#repaymentModal"].some(selector => !$(selector).hidden));
+  document.body.classList.toggle("modal-open", ["#transactionModal", "#budgetModal", "#debtModal", "#repaymentModal", "#fundModal"].some(selector => !$(selector).hidden));
 }
 function openModal(transaction = null) {
   $("#transactionForm").reset();
@@ -336,6 +401,20 @@ function openRepaymentModal(debt) {
   setTimeout(() => $("#debtPaymentInput").focus(), 50);
 }
 function closeRepaymentModal() { $("#repaymentModal").hidden = true; $("#repaymentForm").reset(); syncModalState(); }
+function openFundModal(type) {
+  const fund = data.funds[type];
+  if (!fund) return;
+  $("#fundForm").reset();
+  $("#fundTypeInput").value = type;
+  $("#fundModalTitle").textContent = fund.name;
+  $("#fundCurrentBalance").textContent = `Hiện có ${money(fund.balance)}`;
+  $("#fundTargetInput").value = fund.target ? new Intl.NumberFormat("vi-VN").format(fund.target) : "";
+  $("#fundDateInput").value = selectedMonth === currentMonth() ? localDate() : `${selectedMonth}-01`;
+  $("#fundModal").hidden = false;
+  syncModalState();
+  setTimeout(() => $("#fundAmountInput").focus(), 50);
+}
+function closeFundModal() { $("#fundModal").hidden = true; $("#fundForm").reset(); syncModalState(); }
 function parseAmount(value) { return Number(value.replace(/\D/g, "")); }
 function formatAmountInput(event) { const value = parseAmount(event.target.value); event.target.value = value ? new Intl.NumberFormat("vi-VN").format(value) : ""; }
 
@@ -355,9 +434,15 @@ $("#closeDebtBtn").addEventListener("click", closeDebtModal);
 $("#debtModal").addEventListener("click", event => { if (event.target === event.currentTarget) closeDebtModal(); });
 $("#closeRepaymentBtn").addEventListener("click", closeRepaymentModal);
 $("#repaymentModal").addEventListener("click", event => { if (event.target === event.currentTarget) closeRepaymentModal(); });
+$("#closeFundBtn").addEventListener("click", closeFundModal);
+$("#fundModal").addEventListener("click", event => { if (event.target === event.currentTarget) closeFundModal(); });
+$(".funds-panel").addEventListener("click", event => {
+  const button = event.target.closest("[data-open-fund]");
+  if (button) openFundModal(button.dataset.openFund);
+});
 document.addEventListener("keydown", event => {
   if (event.key !== "Escape") return;
-  closeModal(); closeDebtModal(); closeRepaymentModal(); $("#budgetModal").hidden = true; syncModalState();
+  closeModal(); closeDebtModal(); closeRepaymentModal(); closeFundModal(); $("#budgetModal").hidden = true; syncModalState();
 });
 document.querySelectorAll('input[name="type"]').forEach(input => input.addEventListener("change", event => fillCategories(event.target.value)));
 $("#amountInput").addEventListener("input", formatAmountInput);
@@ -365,6 +450,8 @@ $("#budgetInput").addEventListener("input", formatAmountInput);
 $("#debtTotalInput").addEventListener("input", formatAmountInput);
 $("#debtPaidInput").addEventListener("input", formatAmountInput);
 $("#debtPaymentInput").addEventListener("input", formatAmountInput);
+$("#fundAmountInput").addEventListener("input", formatAmountInput);
+$("#fundTargetInput").addEventListener("input", formatAmountInput);
 $("#monthFilter").addEventListener("change", event => {
   selectedMonth = event.target.value || currentMonth();
   $("#dateFrom").value = "";
@@ -405,6 +492,34 @@ $("#clearDateFilter").addEventListener("click", () => {
   $("#dateTo").min = "";
   resetTransactionPage();
   renderTransactions();
+});
+
+$("#fundForm").addEventListener("submit", event => {
+  event.preventDefault();
+  const type = $("#fundTypeInput").value;
+  const fund = data.funds[type];
+  if (!fund) return showToast("Không tìm thấy quỹ");
+  const amount = parseAmount($("#fundAmountInput").value || "0");
+  const targetRaw = $("#fundTargetInput").value.trim();
+  const target = targetRaw ? parseAmount(targetRaw) : fund.target;
+  const action = new FormData(event.target).get("fundAction");
+  const date = $("#fundDateInput").value;
+  if (!amount && target === fund.target) return showToast("Nhập số tiền hoặc thay đổi mục tiêu quỹ");
+  if (action === "withdraw" && amount > fund.balance) return showToast(`Quỹ chỉ còn ${money(fund.balance)}`);
+  if (action === "deposit" && amount) {
+    const month = date.slice(0, 7);
+    const available = carryIntoMonth(month) + monthCashFlow(month) - monthFundAllocation(month);
+    if (amount > Math.max(0, available)) return showToast(`Số dư khả dụng chỉ còn ${money(Math.max(0, available))}`);
+  }
+  fund.target = target;
+  if (amount) {
+    fund.balance = Math.max(0, fund.balance + (action === "withdraw" ? -amount : amount));
+    fund.movements.push({ id: crypto.randomUUID(), action, amount, date });
+    selectedMonth = date.slice(0, 7);
+    $("#monthFilter").value = selectedMonth;
+  }
+  saveData(); closeFundModal(); render();
+  showToast(amount ? `${action === "withdraw" ? "Đã rút khỏi" : "Đã nạp vào"} ${fund.name} ✓` : "Đã cập nhật mục tiêu quỹ ✓");
 });
 
 $("#debtForm").addEventListener("submit", event => {
@@ -538,7 +653,7 @@ $("#budgetForm").addEventListener("submit", event => { event.preventDefault(); c
 
 document.querySelectorAll(".nav-item").forEach(button => button.addEventListener("click", () => {
   document.querySelectorAll(".nav-item").forEach(item => item.classList.remove("active")); button.classList.add("active");
-  const targets = { overview: ".topbar", transactions: ".transactions-panel", budget: ".summary-grid", debts: ".debts-panel" };
+  const targets = { overview: ".topbar", transactions: ".transactions-panel", budget: ".summary-grid", debts: ".debts-panel", funds: ".funds-panel" };
   const target = targets[button.dataset.view] || ".topbar";
   document.querySelector(target).scrollIntoView({ behavior: "smooth", block: "start" });
   if (button.dataset.view === "budget") setTimeout(openBudget, 250);

@@ -31,6 +31,9 @@
         <button class="nav-item" data-view="debts">
           <span class="nav-icon">◫</span> Khoản nợ
         </button>
+        <button class="nav-item" data-view="funds">
+          <span class="nav-icon">♢</span> Quỹ
+        </button>
       </nav>
 
       <div class="sidebar-card">
@@ -139,6 +142,35 @@
         <div class="debt-list" id="debtList"></div>
         <div class="debt-empty" id="debtEmpty">
           <span>✓</span><strong>Chưa có khoản nợ nào</strong><p>Thêm khoản nợ để theo dõi tiến độ trả dần.</p>
+        </div>
+      </section>
+
+      <section class="panel funds-panel">
+        <div class="panel-heading fund-heading">
+          <div>
+            <p class="section-kicker">Chuẩn bị cho tương lai</p>
+            <h2>Quỹ &amp; tiền để dành</h2>
+          </div>
+          <span class="fund-heading-note">Tiền trong quỹ được tách khỏi số dư khả dụng</span>
+        </div>
+        <div class="fund-grid">
+          <article class="fund-card rollover-card">
+            <div class="fund-icon">↻</div>
+            <div class="fund-copy"><span>Dư từ tháng trước</span><strong id="carryInValue">0 ₫</strong><p id="carryInCaption">Tự động chuyển sang tháng này</p></div>
+            <div class="rollover-next"><span>Dự kiến chuyển tháng sau</span><strong id="carryOutValue">0 ₫</strong></div>
+          </article>
+          <article class="fund-card" data-fund-card="travel">
+            <div class="fund-card-head"><div class="fund-icon travel">✦</div><button class="fund-action-btn" type="button" data-open-fund="travel">Nạp / rút</button></div>
+            <span>Quỹ đi chơi</span><strong id="travelFundBalance">0 ₫</strong>
+            <div class="fund-progress"><span id="travelFundProgress"></span></div>
+            <p id="travelFundCaption">Chưa đặt mục tiêu</p>
+          </article>
+          <article class="fund-card" data-fund-card="savings">
+            <div class="fund-card-head"><div class="fund-icon savings">◆</div><button class="fund-action-btn" type="button" data-open-fund="savings">Nạp / rút</button></div>
+            <span>Tiền để dành</span><strong id="savingsFundBalance">0 ₫</strong>
+            <div class="fund-progress"><span id="savingsFundProgress"></span></div>
+            <p id="savingsFundCaption">Chưa đặt mục tiêu</p>
+          </article>
         </div>
       </section>
 
@@ -251,6 +283,28 @@
         <label class="field amount-field"><span>Số tiền đã trả</span><div><input type="text" id="debtPaymentInput" inputmode="numeric" placeholder="0" required /><b>₫</b></div></label>
         <label class="field"><span>Ngày trả</span><input type="date" id="debtPaymentDate" required /></label>
         <button class="primary-btn submit-btn" type="submit">Xác nhận trả nợ</button>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="fundModal" hidden>
+    <section class="modal small-modal" role="dialog" aria-modal="true" aria-labelledby="fundModalTitle">
+      <button class="close-btn" id="closeFundBtn" aria-label="Đóng">×</button>
+      <p class="section-kicker">Quản lý quỹ</p>
+      <h2 id="fundModalTitle">Cập nhật quỹ</h2>
+      <p class="fund-current" id="fundCurrentBalance">Hiện có 0 ₫</p>
+      <form id="fundForm">
+        <input type="hidden" id="fundTypeInput" />
+        <div class="segmented fund-action-segmented">
+          <label><input type="radio" name="fundAction" value="deposit" checked /><span>Nạp vào quỹ</span></label>
+          <label><input type="radio" name="fundAction" value="withdraw" /><span>Rút khỏi quỹ</span></label>
+        </div>
+        <label class="field amount-field"><span>Số tiền <em>(có thể để trống nếu chỉ sửa mục tiêu)</em></span><div><input type="text" id="fundAmountInput" inputmode="numeric" placeholder="0" /><b>₫</b></div></label>
+        <div class="form-row">
+          <label class="field"><span>Mục tiêu quỹ</span><input type="text" id="fundTargetInput" inputmode="numeric" placeholder="5.000.000" /></label>
+          <label class="field"><span>Ngày thực hiện</span><input type="date" id="fundDateInput" required /></label>
+        </div>
+        <button class="primary-btn submit-btn" type="submit">Lưu thay đổi</button>
       </form>
     </section>
   </div>
