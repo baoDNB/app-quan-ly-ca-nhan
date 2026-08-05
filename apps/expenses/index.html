@@ -240,6 +240,22 @@
     </section>
   </div>
 
+  <div class="modal-backdrop" id="transactionDetailModal" hidden>
+    <section class="modal small-modal transaction-detail-modal" role="dialog" aria-modal="true" aria-labelledby="transactionDetailTitle">
+      <button class="close-btn" id="closeTransactionDetailBtn" aria-label="Đóng">×</button>
+      <p class="section-kicker">Chi tiết giao dịch</p>
+      <h2 id="transactionDetailTitle">Giao dịch</h2>
+      <div class="detail-amount" id="transactionDetailAmount">0 ₫</div>
+      <div class="detail-grid">
+        <div><span>Loại giao dịch</span><strong id="transactionDetailType">Khoản chi</strong></div>
+        <div><span>Danh mục</span><strong id="transactionDetailCategory">Khác</strong></div>
+        <div><span>Ngày</span><strong id="transactionDetailDate">--/--/----</strong></div>
+        <div><span>Ghi chú</span><strong id="transactionDetailNote">Không có ghi chú</strong></div>
+      </div>
+      <p class="detail-readonly">Thông tin chỉ để xem. Dùng nút bút chì ngoài danh sách nếu bạn muốn chỉnh sửa.</p>
+    </section>
+  </div>
+
   <div class="modal-backdrop" id="budgetModal" hidden>
     <section class="modal small-modal" role="dialog" aria-modal="true" aria-labelledby="budgetTitle">
       <button class="close-btn" id="closeBudgetBtn" aria-label="Đóng">×</button>

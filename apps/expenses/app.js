@@ -310,7 +310,7 @@ function renderTransactions() {
   $("#transactionList").innerHTML = pageItems.map(item => {
     const category = getCategory(item.type, item.category);
     const date = new Date(item.date + "T00:00:00").toLocaleDateString("vi-VN", { day: "2-digit", month: "short", year: "numeric" });
-    return `<div class="transaction-item">
+    return `<div class="transaction-item" data-detail="${item.id}" tabindex="0" aria-label="Xem chi tiết ${escapeHtml(item.name)}">
       <div class="transaction-icon" style="color:${category.color};background:${category.bg}">${category.icon}</div>
       <div class="transaction-name"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.note || (item.type === "income" ? "Khoản thu" : "Khoản chi"))}</span></div>
       <div class="transaction-meta"><span class="transaction-category"><i class="category-dot" style="background:${category.color}"></i>${category.name}</span><span class="transaction-date">${date}</span></div>
@@ -365,7 +365,7 @@ function showToast(message, options = {}) {
   toastTimer = setTimeout(() => $("#toast").classList.remove("show"), options.duration || 2400);
 }
 function syncModalState() {
-  document.body.classList.toggle("modal-open", ["#transactionModal", "#budgetModal", "#debtModal", "#repaymentModal", "#fundModal"].some(selector => !$(selector).hidden));
+  document.body.classList.toggle("modal-open", ["#transactionModal", "#transactionDetailModal", "#budgetModal", "#debtModal", "#repaymentModal", "#fundModal"].some(selector => !$(selector).hidden));
 }
 function openModal(transaction = null) {
   $("#transactionForm").reset();
@@ -397,6 +397,19 @@ function closeModal() {
   fillCategories("expense");
   syncModalState();
 }
+function openTransactionDetail(transaction) {
+  const category = getCategory(transaction.type, transaction.category);
+  $("#transactionDetailTitle").textContent = transaction.name;
+  $("#transactionDetailAmount").textContent = `${transaction.type === "income" ? "+" : "−"}${money(transaction.amount)}`;
+  $("#transactionDetailAmount").className = `detail-amount ${transaction.type}`;
+  $("#transactionDetailType").textContent = transaction.type === "income" ? "Khoản thu" : "Khoản chi";
+  $("#transactionDetailCategory").textContent = `${category.icon} ${category.name}`;
+  $("#transactionDetailDate").textContent = fullDate(transaction.date);
+  $("#transactionDetailNote").textContent = transaction.note || "Không có ghi chú";
+  $("#transactionDetailModal").hidden = false;
+  syncModalState();
+}
+function closeTransactionDetail() { $("#transactionDetailModal").hidden = true; syncModalState(); }
 function openDebtModal() { $("#debtModal").hidden = false; syncModalState(); setTimeout(() => $("#debtCreditorInput").focus(), 50); }
 function closeDebtModal() { $("#debtModal").hidden = true; $("#debtForm").reset(); syncModalState(); }
 function openRepaymentModal(debt) {
@@ -450,6 +463,8 @@ $("#mobileAddBtn").addEventListener("click", () => openModal());
 $("#emptyAddBtn").addEventListener("click", () => openModal());
 $("#closeModalBtn").addEventListener("click", closeModal);
 $("#transactionModal").addEventListener("click", event => { if (event.target === event.currentTarget) closeModal(); });
+$("#closeTransactionDetailBtn").addEventListener("click", closeTransactionDetail);
+$("#transactionDetailModal").addEventListener("click", event => { if (event.target === event.currentTarget) closeTransactionDetail(); });
 $("#openDebtBtn").addEventListener("click", openDebtModal);
 $("#closeDebtBtn").addEventListener("click", closeDebtModal);
 $("#debtModal").addEventListener("click", event => { if (event.target === event.currentTarget) closeDebtModal(); });
@@ -463,7 +478,7 @@ $(".funds-panel").addEventListener("click", event => {
 });
 document.addEventListener("keydown", event => {
   if (event.key !== "Escape") return;
-  closeModal(); closeDebtModal(); closeRepaymentModal(); closeFundModal(); $("#budgetModal").hidden = true; syncModalState();
+  closeModal(); closeTransactionDetail(); closeDebtModal(); closeRepaymentModal(); closeFundModal(); $("#budgetModal").hidden = true; syncModalState();
 });
 document.querySelectorAll('input[name="type"]').forEach(input => input.addEventListener("change", event => fillCategories(event.target.value)));
 $("#amountInput").addEventListener("input", formatAmountInput);
@@ -638,7 +653,12 @@ $("#transactionList").addEventListener("click", event => {
     return;
   }
   const button = event.target.closest("[data-delete]");
-  if (!button) return;
+  if (!button) {
+    const detailRow = event.target.closest("[data-detail]");
+    const transaction = detailRow ? data.transactions.find(item => String(item.id) === detailRow.dataset.detail) : null;
+    if (transaction) openTransactionDetail(transaction);
+    return;
+  }
   const index = data.transactions.findIndex(item => String(item.id) === button.dataset.delete);
   if (index < 0) return showToast("Không tìm thấy giao dịch để xóa");
   clearTimeout(undoTimer);
@@ -653,6 +673,12 @@ $("#transactionList").addEventListener("click", event => {
   data.transactions.splice(index, 1);
   saveData(); render(); showToast("Đã xóa giao dịch", { undo: true, duration: 5000 });
   undoTimer = setTimeout(() => { pendingDeletion = null; }, 5000);
+});
+$("#transactionList").addEventListener("keydown", event => {
+  if (!["Enter", " "].includes(event.key) || event.target.closest("button")) return;
+  const detailRow = event.target.closest("[data-detail]");
+  const transaction = detailRow ? data.transactions.find(item => String(item.id) === detailRow.dataset.detail) : null;
+  if (transaction) { event.preventDefault(); openTransactionDetail(transaction); }
 });
 
 $("#undoDeleteBtn").addEventListener("click", () => {
