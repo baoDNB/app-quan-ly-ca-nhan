@@ -54,7 +54,7 @@ function loadData() {
       ...saved,
       budgets: saved.budgets && typeof saved.budgets === "object" ? saved.budgets : {},
       transactions: Array.isArray(saved.transactions) ? saved.transactions.map(item =>
-        item.type === "expense" && item.category === "other" && (item.note === "Thanh toán khoản nợ" || /^trả nợ\b/i.test(item.name || ""))
+        item.type === "expense" && item.category === "other" && (item.note === "Thanh toán khoản nợ" || /^trả nợ(?:\s|$)/i.test(item.name || ""))
           ? { ...item, category: "debt" }
           : item
       ) : [],
@@ -65,6 +65,7 @@ function loadData() {
 }
 
 let data = loadData();
+saveData();
 let selectedMonth = currentMonth();
 let toastTimer;
 let undoTimer;
@@ -305,9 +306,9 @@ $("#monthFilter").value = selectedMonth;
 fillCategories("expense");
 render();
 
-$("#openTransactionBtn").addEventListener("click", openModal);
-$("#mobileAddBtn").addEventListener("click", openModal);
-$("#emptyAddBtn").addEventListener("click", openModal);
+$("#openTransactionBtn").addEventListener("click", () => openModal());
+$("#mobileAddBtn").addEventListener("click", () => openModal());
+$("#emptyAddBtn").addEventListener("click", () => openModal());
 $("#closeModalBtn").addEventListener("click", closeModal);
 $("#transactionModal").addEventListener("click", event => { if (event.target === event.currentTarget) closeModal(); });
 $("#openDebtBtn").addEventListener("click", openDebtModal);
