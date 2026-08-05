@@ -22,13 +22,17 @@
         <button class="nav-item" type="button" data-module="notes"><span class="nav-icon" aria-hidden="true">✦</span><span>Ghi chú</span></button>
         <button class="nav-item" type="button" data-module="expenses"><span class="nav-icon" aria-hidden="true">₫</span><span>Chi tiêu</span></button>
       </nav>
-      <div class="today" id="today" aria-label="Ngày hôm nay"></div>
+      <div class="account-area">
+        <div class="today" id="today" aria-label="Ngày hôm nay"></div>
+        <span class="sync-status" id="sync-status" aria-live="polite">Chưa đồng bộ</span>
+        <button class="account-button" id="account-button" type="button">Đăng nhập Google</button>
+      </div>
     </header>
     <main class="workspace">
       <div class="loading" id="loading" aria-live="polite"><span></span><p>Đang mở ứng dụng…</p></div>
       <iframe id="app-frame" title="Ứng dụng quản lý cá nhân"></iframe>
     </main>
   </div>
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
