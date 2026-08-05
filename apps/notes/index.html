@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f7f6f2" />
+  <title>Mây Note — Ghi lại điều quan trọng</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@1,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-row">
+        <button class="brand" data-filter="all" aria-label="Về tất cả ghi chú">
+          <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+          <span>Mây <em>note</em></span>
+        </button>
+        <button class="icon-button sidebar-close" id="sidebarClose" aria-label="Đóng menu">
+          <svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+
+      <button class="new-note-button" id="newNoteButton">
+        <span class="plus">+</span><span>Ghi chú mới</span><kbd>N</kbd>
+      </button>
+
+      <nav class="main-nav" aria-label="Điều hướng">
+        <button class="nav-item active" data-filter="all">
+          <svg viewBox="0 0 24 24"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5zM8 9h8M8 13h6"/></svg>
+          <span>Tất cả ghi chú</span><span class="nav-count" id="allCount">0</span>
+        </button>
+        <button class="nav-item" data-filter="pinned">
+          <svg viewBox="0 0 24 24"><path d="m14.5 4 5.5 5.5-3 1.25-3.25 3.25-.5 4.75-2-2-4.5 4.5-1.5-1.5 4.5-4.5-2-2 4.75-.5L15.75 8z"/></svg>
+          <span>Đã ghim</span><span class="nav-count" id="pinnedCount">0</span>
+        </button>
+        <button class="nav-item" data-filter="trash">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>
+          <span>Thùng rác</span><span class="nav-count" id="trashCount">0</span>
+        </button>
+      </nav>
+
+      <div class="label-section">
+        <div class="section-title"><span>Nhãn</span><button id="addLabelButton" aria-label="Thêm nhãn">+</button></div>
+        <div id="labelList" class="label-list"></div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="storage-row"><span>Dung lượng</span><span id="storageText">0 KB</span></div>
+        <div class="storage-bar"><span id="storageBar"></span></div>
+        <p>Mọi ghi chú được lưu trên thiết bị này.</p>
+      </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <main class="main-content">
+      <header class="topbar">
+        <button class="icon-button menu-button" id="menuButton" aria-label="Mở menu">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m16.2 16.2 4 4"/></svg>
+          <input id="searchInput" type="search" placeholder="Tìm trong ghi chú..." autocomplete="off" />
+          <kbd>⌘ K</kbd>
+        </div>
+        <div class="top-actions">
+          <button class="icon-button" id="themeButton" aria-label="Đổi giao diện">
+            <svg class="sun-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"/></svg>
+          </button>
+          <div class="avatar" aria-label="Tài khoản">MN</div>
+        </div>
+      </header>
+
+      <section class="content-wrap">
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow" id="eyebrow">KHÔNG GIAN CỦA BẠN</p>
+            <h1 id="pageTitle">Mọi <em>ý tưởng</em></h1>
+            <p id="pageSubtitle">Thu thập suy nghĩ, kế hoạch và những điều bạn không muốn quên.</p>
+          </div>
+          <div class="heading-actions">
+            <div class="view-switch" role="group" aria-label="Kiểu hiển thị">
+              <button class="active" data-view="grid" aria-label="Dạng lưới"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg></button>
+              <button data-view="list" aria-label="Dạng danh sách"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="5" cy="6" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="5" cy="18" r="1"/></svg></button>
+            </div>
+            <select id="sortSelect" aria-label="Sắp xếp">
+              <option value="updated">Mới cập nhật</option>
+              <option value="created">Mới tạo</option>
+              <option value="title">Theo tiêu đề</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="notes-grid" id="notesGrid"></div>
+
+        <div class="empty-state" id="emptyState" hidden>
+          <div class="empty-art"><span></span><span></span><span></span></div>
+          <h2>Chưa có gì ở đây</h2>
+          <p id="emptyText">Bắt đầu bằng một ý tưởng nhỏ. Phần còn lại sẽ tự tìm đến.</p>
+          <button id="emptyCreateButton">Tạo ghi chú đầu tiên</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="editorModal" aria-hidden="true">
+    <section class="editor" role="dialog" aria-modal="true" aria-labelledby="editorTitleLabel">
+      <div class="editor-toolbar">
+        <div class="editor-label-select">
+          <span class="label-dot" id="editorLabelDot"></span>
+          <select id="noteLabel" aria-label="Chọn nhãn"></select>
+        </div>
+        <div>
+          <button class="icon-button" id="pinButton" aria-label="Ghim ghi chú"><svg viewBox="0 0 24 24"><path d="m14.5 4 5.5 5.5-3 1.25-3.25 3.25-.5 4.75-2-2-4.5 4.5-1.5-1.5 4.5-4.5-2-2 4.75-.5L15.75 8z"/></svg></button>
+          <button class="icon-button" id="closeEditorButton" aria-label="Đóng"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+        </div>
+      </div>
+      <div class="editor-body">
+        <input id="noteTitle" maxlength="120" placeholder="Tiêu đề ghi chú" aria-label="Tiêu đề ghi chú" />
+        <textarea id="noteContent" placeholder="Bắt đầu viết điều gì đó..." aria-label="Nội dung ghi chú"></textarea>
+      </div>
+      <footer class="editor-footer">
+        <span id="editorMeta">Vừa tạo</span>
+        <div>
+          <button class="text-button danger" id="deleteButton">Xóa</button>
+          <button class="save-button" id="saveButton">Lưu ghi chú <span>⌘↵</span></button>
+        </div>
+      </footer>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status"><span>✓</span><p></p></div>
+
+  <template id="noteCardTemplate">
+    <article class="note-card" tabindex="0">
+      <div class="card-top">
+        <span class="card-label"><i></i><b></b></span>
+        <button class="pin-card" aria-label="Ghim ghi chú"><svg viewBox="0 0 24 24"><path d="m14.5 4 5.5 5.5-3 1.25-3.25 3.25-.5 4.75-2-2-4.5 4.5-1.5-1.5 4.5-4.5-2-2 4.75-.5L15.75 8z"/></svg></button>
+      </div>
+      <h2></h2>
+      <p class="card-content"></p>
+      <div class="card-bottom"><time></time><span class="word-count"></span></div>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
