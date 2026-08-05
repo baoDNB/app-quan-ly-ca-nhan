@@ -1,0 +1,12 @@
+{
+  "name": "app-quan-ly-ca-nhan",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ứng dụng quản lý thời gian, ghi chú và chi tiêu cá nhân",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
