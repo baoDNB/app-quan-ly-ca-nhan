@@ -33,6 +33,7 @@ function getSeedData() {
   const month = currentMonth();
   return {
     budgets: { [month]: 12000000 },
+    debts: [],
     transactions: [
       { id: crypto.randomUUID(), type: "income", amount: 18000000, name: "Lương tháng", category: "salary", date: `${month}-01`, note: "" },
       { id: crypto.randomUUID(), type: "expense", amount: 1450000, name: "Tiền thuê nhà", category: "home", date: `${month}-03`, note: "" },
@@ -45,7 +46,16 @@ function getSeedData() {
 }
 
 function loadData() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || getSeedData(); }
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (!saved) return getSeedData();
+    return {
+      ...saved,
+      budgets: saved.budgets && typeof saved.budgets === "object" ? saved.budgets : {},
+      transactions: Array.isArray(saved.transactions) ? saved.transactions : [],
+      debts: Array.isArray(saved.debts) ? saved.debts : []
+    };
+  }
   catch { return getSeedData(); }
 }
 
@@ -108,6 +118,7 @@ function render() {
 
   renderBars(expenseItems);
   renderCategories(expenseItems, expense);
+  renderDebts();
   renderTransactions();
 }
 
@@ -147,6 +158,47 @@ function renderCategories(expenses, total) {
   `).join("") : '<span class="muted">Chưa có khoản chi</span>';
 }
 
+function debtNumbers(debt) {
+  const total = Math.max(0, Number(debt.total) || 0);
+  const rawRemaining = Number(debt.remaining);
+  const remaining = Math.max(0, Math.min(total, Number.isFinite(rawRemaining) ? rawRemaining : total));
+  return { total, remaining, paid: Math.max(0, total - remaining) };
+}
+
+function renderDebts() {
+  const debts = data.debts.map(debt => ({ ...debt, ...debtNumbers(debt) }));
+  const total = debts.reduce((sum, debt) => sum + debt.total, 0);
+  const remaining = debts.reduce((sum, debt) => sum + debt.remaining, 0);
+  const paid = Math.max(0, total - remaining);
+  $("#debtTotalValue").textContent = money(total);
+  $("#debtPaidValue").textContent = money(paid);
+  $("#debtRemainingValue").textContent = money(remaining);
+  $("#debtEmpty").hidden = debts.length !== 0;
+  $("#debtList").innerHTML = debts
+    .sort((a, b) => Number(a.remaining === 0) - Number(b.remaining === 0) || (a.dueDate || "9999").localeCompare(b.dueDate || "9999"))
+    .map(debt => {
+      const paidPercent = debt.total ? Math.min(100, Math.round(debt.paid / debt.total * 100)) : 0;
+      const remainingPercent = Math.max(0, 100 - paidPercent);
+      const due = debt.dueDate ? `Hạn trả ${fullDate(debt.dueDate)}` : "Chưa đặt hạn trả";
+      return `<article class="debt-card ${debt.remaining === 0 ? "completed" : ""}">
+        <div class="debt-card-head">
+          <div><h3>${escapeHtml(debt.creditor || "Không rõ")}</h3><p>${due}${debt.note ? ` · ${escapeHtml(debt.note)}` : ""}</p></div>
+          <span class="debt-status">${debt.remaining === 0 ? "Đã trả hết" : `Còn ${remainingPercent}%`}</span>
+        </div>
+        <div class="debt-figures">
+          <div><span>Tổng nợ</span><strong>${money(debt.total)}</strong></div>
+          <div><span>Còn phải trả</span><strong>${money(debt.remaining)}</strong></div>
+        </div>
+        <div class="debt-progress"><span style="width:${paidPercent}%"></span></div>
+        <div class="debt-progress-copy"><b>Đã trả ${paidPercent}%</b><span>${money(debt.paid)} / ${money(debt.total)}</span></div>
+        <div class="debt-actions">
+          <button class="debt-delete-btn" type="button" data-delete-debt="${debt.id}">Xóa</button>
+          <button class="debt-pay-btn" type="button" data-pay-debt="${debt.id}" ${debt.remaining === 0 ? "disabled" : ""}>Ghi nhận trả nợ</button>
+        </div>
+      </article>`;
+    }).join("");
+}
+
 function renderTransactions() {
   const query = $("#searchInput").value.trim().toLowerCase();
   const filter = $("#typeFilter").value;
@@ -159,6 +211,14 @@ function renderTransactions() {
     (filter === "all" || item.type === filter) &&
     (item.name.toLowerCase().includes(query) || (item.note || "").toLowerCase().includes(query))
   ).sort((a,b) => b.date.localeCompare(a.date));
+  const filteredIncome = filtered.filter(item => item.type === "income").reduce((sum, item) => sum + item.amount, 0);
+  const filteredExpense = filtered.filter(item => item.type === "expense").reduce((sum, item) => sum + item.amount, 0);
+  const filteredBalance = filteredIncome - filteredExpense;
+  $("#filteredCount").textContent = filtered.length;
+  $("#filteredIncome").textContent = money(filteredIncome);
+  $("#filteredExpense").textContent = money(filteredExpense);
+  $("#filteredBalance").textContent = money(filteredBalance);
+  $("#filteredBalance").className = filteredBalance > 0 ? "positive" : filteredBalance < 0 ? "negative" : "";
   $("#transactionList").innerHTML = filtered.map(item => {
     const category = getCategory(item.type, item.category);
     const date = new Date(item.date + "T00:00:00").toLocaleDateString("vi-VN", { day: "2-digit", month: "short", year: "numeric" });
@@ -183,9 +243,24 @@ function showToast(message, options = {}) {
   $("#toast").classList.add("show");
   toastTimer = setTimeout(() => $("#toast").classList.remove("show"), options.duration || 2400);
 }
-function syncModalState() { document.body.classList.toggle("modal-open", !$("#transactionModal").hidden || !$("#budgetModal").hidden); }
+function syncModalState() {
+  document.body.classList.toggle("modal-open", ["#transactionModal", "#budgetModal", "#debtModal", "#repaymentModal"].some(selector => !$(selector).hidden));
+}
 function openModal() { $("#transactionModal").hidden = false; syncModalState(); $("#dateInput").value = selectedMonth === currentMonth() ? localDate() : `${selectedMonth}-01`; setTimeout(() => $("#amountInput").focus(), 50); }
 function closeModal() { $("#transactionModal").hidden = true; syncModalState(); $("#transactionForm").reset(); fillCategories("expense"); }
+function openDebtModal() { $("#debtModal").hidden = false; syncModalState(); setTimeout(() => $("#debtCreditorInput").focus(), 50); }
+function closeDebtModal() { $("#debtModal").hidden = true; $("#debtForm").reset(); syncModalState(); }
+function openRepaymentModal(debt) {
+  const { remaining } = debtNumbers(debt);
+  $("#repaymentDebtId").value = debt.id;
+  $("#repaymentCreditor").textContent = `Nợ ${debt.creditor} · còn ${money(remaining)}`;
+  $("#debtPaymentInput").value = "";
+  $("#debtPaymentDate").value = localDate();
+  $("#repaymentModal").hidden = false;
+  syncModalState();
+  setTimeout(() => $("#debtPaymentInput").focus(), 50);
+}
+function closeRepaymentModal() { $("#repaymentModal").hidden = true; $("#repaymentForm").reset(); syncModalState(); }
 function parseAmount(value) { return Number(value.replace(/\D/g, "")); }
 function formatAmountInput(event) { const value = parseAmount(event.target.value); event.target.value = value ? new Intl.NumberFormat("vi-VN").format(value) : ""; }
 
@@ -199,10 +274,21 @@ $("#mobileAddBtn").addEventListener("click", openModal);
 $("#emptyAddBtn").addEventListener("click", openModal);
 $("#closeModalBtn").addEventListener("click", closeModal);
 $("#transactionModal").addEventListener("click", event => { if (event.target === event.currentTarget) closeModal(); });
-document.addEventListener("keydown", event => { if (event.key === "Escape") { closeModal(); $("#budgetModal").hidden = true; syncModalState(); } });
+$("#openDebtBtn").addEventListener("click", openDebtModal);
+$("#closeDebtBtn").addEventListener("click", closeDebtModal);
+$("#debtModal").addEventListener("click", event => { if (event.target === event.currentTarget) closeDebtModal(); });
+$("#closeRepaymentBtn").addEventListener("click", closeRepaymentModal);
+$("#repaymentModal").addEventListener("click", event => { if (event.target === event.currentTarget) closeRepaymentModal(); });
+document.addEventListener("keydown", event => {
+  if (event.key !== "Escape") return;
+  closeModal(); closeDebtModal(); closeRepaymentModal(); $("#budgetModal").hidden = true; syncModalState();
+});
 document.querySelectorAll('input[name="type"]').forEach(input => input.addEventListener("change", event => fillCategories(event.target.value)));
 $("#amountInput").addEventListener("input", formatAmountInput);
 $("#budgetInput").addEventListener("input", formatAmountInput);
+$("#debtTotalInput").addEventListener("input", formatAmountInput);
+$("#debtPaidInput").addEventListener("input", formatAmountInput);
+$("#debtPaymentInput").addEventListener("input", formatAmountInput);
 $("#monthFilter").addEventListener("change", event => {
   selectedMonth = event.target.value || currentMonth();
   $("#dateFrom").value = "";
@@ -232,6 +318,57 @@ $("#clearDateFilter").addEventListener("click", () => {
   $("#dateFrom").max = "";
   $("#dateTo").min = "";
   renderTransactions();
+});
+
+$("#debtForm").addEventListener("submit", event => {
+  event.preventDefault();
+  const creditor = $("#debtCreditorInput").value.trim();
+  const total = parseAmount($("#debtTotalInput").value);
+  const paid = parseAmount($("#debtPaidInput").value || "0");
+  if (!creditor || !total) return showToast("Vui lòng nhập người cho vay và tổng khoản nợ");
+  if (paid > total) return showToast("Số tiền đã trả không thể lớn hơn tổng khoản nợ");
+  data.debts.push({
+    id: crypto.randomUUID(), creditor, total, remaining: total - paid,
+    dueDate: $("#debtDueDateInput").value,
+    note: $("#debtNoteInput").value.trim(), createdAt: localDate()
+  });
+  saveData(); closeDebtModal(); renderDebts(); showToast("Đã thêm khoản nợ ✓");
+});
+
+$("#debtList").addEventListener("click", event => {
+  const payButton = event.target.closest("[data-pay-debt]");
+  if (payButton) {
+    const debt = data.debts.find(item => String(item.id) === payButton.dataset.payDebt);
+    if (debt) openRepaymentModal(debt);
+    return;
+  }
+  const deleteButton = event.target.closest("[data-delete-debt]");
+  if (!deleteButton) return;
+  const debt = data.debts.find(item => String(item.id) === deleteButton.dataset.deleteDebt);
+  if (!debt || !window.confirm(`Xóa khoản nợ với ${debt.creditor}? Các giao dịch trả nợ đã ghi vẫn được giữ lại.`)) return;
+  data.debts = data.debts.filter(item => String(item.id) !== deleteButton.dataset.deleteDebt);
+  saveData(); renderDebts(); showToast("Đã xóa khoản nợ");
+});
+
+$("#repaymentForm").addEventListener("submit", event => {
+  event.preventDefault();
+  const debt = data.debts.find(item => String(item.id) === $("#repaymentDebtId").value);
+  if (!debt) return showToast("Không tìm thấy khoản nợ");
+  const amount = parseAmount($("#debtPaymentInput").value);
+  const date = $("#debtPaymentDate").value;
+  const { remaining } = debtNumbers(debt);
+  if (!amount) return showToast("Vui lòng nhập số tiền đã trả");
+  if (amount > remaining) return showToast(`Số tiền trả tối đa là ${money(remaining)}`);
+  debt.remaining = remaining - amount;
+  debt.updatedAt = localDate();
+  data.transactions.push({
+    id: crypto.randomUUID(), type: "expense", amount,
+    name: `Trả nợ ${debt.creditor}`, category: "other", date,
+    note: "Thanh toán khoản nợ"
+  });
+  selectedMonth = date.slice(0, 7); $("#monthFilter").value = selectedMonth;
+  saveData(); closeRepaymentModal(); render();
+  showToast(debt.remaining === 0 ? `Đã trả hết nợ cho ${debt.creditor} ✓` : `Đã ghi nhận trả ${money(amount)} ✓`);
 });
 
 $("#transactionForm").addEventListener("submit", event => {
@@ -272,7 +409,8 @@ $("#budgetForm").addEventListener("submit", event => { event.preventDefault(); c
 
 document.querySelectorAll(".nav-item").forEach(button => button.addEventListener("click", () => {
   document.querySelectorAll(".nav-item").forEach(item => item.classList.remove("active")); button.classList.add("active");
-  const target = button.dataset.view === "overview" ? ".topbar" : button.dataset.view === "transactions" ? ".transactions-panel" : ".summary-grid";
+  const targets = { overview: ".topbar", transactions: ".transactions-panel", budget: ".summary-grid", debts: ".debts-panel" };
+  const target = targets[button.dataset.view] || ".topbar";
   document.querySelector(target).scrollIntoView({ behavior: "smooth", block: "start" });
   if (button.dataset.view === "budget") setTimeout(openBudget, 250);
 }));

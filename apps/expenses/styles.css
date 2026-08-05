@@ -86,6 +86,44 @@ h2 { margin: 0; font-size: 18px; letter-spacing: -.4px; }
 .donut { width: 166px; aspect-ratio: 1; border-radius: 50%; background: #edf0ea; display: grid; place-items: center; transition: background .4s; }
 .donut-center { width: 104px; aspect-ratio: 1; border-radius: 50%; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 0 0 1px var(--line); }.donut-center span { color: var(--muted); font-size: 10px; }.donut-center strong { font: 800 14px "Be Vietnam Pro", system-ui, sans-serif; margin-top: 3px; }
 .category-legend { display: grid; gap: 11px; }.legend-item { display: grid; grid-template-columns: 8px 1fr auto; align-items: center; gap: 8px; font-size: 11px; }.legend-item i { width: 8px; height: 8px; border-radius: 3px; }.legend-item span { color: var(--muted); }.legend-item b { font-weight: 700; }
+.debts-panel { margin-top: 16px; }
+.debt-heading { align-items: center; margin-bottom: 16px; }
+.secondary-debt-btn { min-height: 40px; padding: 0 14px; border: 1px solid #cfe0d8; border-radius: 12px; color: var(--green); background: #f1f8f4; font-size: 11px; font-weight: 800; }
+.secondary-debt-btn:hover { background: var(--green-light); }
+.debt-summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+.debt-summary-grid > div { min-width: 0; padding: 13px 15px; border: 1px solid var(--line); border-radius: 13px; background: #f7f9f6; }
+.debt-summary-grid span { display: block; margin-bottom: 6px; color: var(--muted); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .55px; }
+.debt-summary-grid strong { display: block; overflow: hidden; text-overflow: ellipsis; color: var(--ink); font-size: 16px; white-space: nowrap; }
+.debt-summary-grid > div:last-child strong { color: var(--coral); }
+.debt-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.debt-card { padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: #fff; }
+.debt-card.completed { background: #f5faf6; }
+.debt-card-head, .debt-figures, .debt-progress-copy, .debt-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.debt-card-head h3 { margin: 0; font-size: 14px; }
+.debt-card-head p { margin: 4px 0 0; color: var(--muted); font-size: 10px; }
+.debt-status { flex: 0 0 auto; padding: 5px 8px; border-radius: 20px; color: #a94c3b; background: #fbe9e4; font-size: 9px; font-weight: 800; }
+.debt-card.completed .debt-status { color: var(--green); background: var(--green-light); }
+.debt-figures { margin: 16px 0 12px; }
+.debt-figures div { min-width: 0; }
+.debt-figures span { display: block; margin-bottom: 3px; color: var(--muted); font-size: 9px; }
+.debt-figures strong { display: block; overflow: hidden; text-overflow: ellipsis; font-size: 13px; white-space: nowrap; }
+.debt-figures div:last-child { text-align: right; }
+.debt-figures div:last-child strong { color: var(--coral); }
+.debt-progress { height: 8px; overflow: hidden; border-radius: 8px; background: #edf1ec; }
+.debt-progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #50a187, var(--green)); transition: width .3s; }
+.debt-progress-copy { margin-top: 7px; color: var(--muted); font-size: 9px; }
+.debt-progress-copy b { color: var(--green); }
+.debt-actions { margin-top: 14px; justify-content: flex-end; }
+.debt-pay-btn, .debt-delete-btn { min-height: 34px; padding: 0 11px; border-radius: 10px; font-size: 10px; font-weight: 800; }
+.debt-pay-btn { border: 0; color: white; background: var(--green); }
+.debt-pay-btn:disabled { cursor: default; opacity: .45; }
+.debt-delete-btn { border: 1px solid var(--line); color: var(--muted); background: transparent; }
+.debt-delete-btn:hover { color: var(--coral); border-color: #f0cfc7; }
+.debt-empty { padding: 28px 10px 18px; display: grid; justify-items: center; color: var(--muted); text-align: center; }
+.debt-empty[hidden] { display: none; }
+.debt-empty > span { display: grid; place-items: center; width: 38px; height: 38px; margin-bottom: 8px; border-radius: 12px; color: var(--green); background: var(--green-light); font-weight: 800; }
+.debt-empty strong { color: var(--ink); font-size: 13px; }
+.debt-empty p { margin: 5px 0 0; font-size: 10px; }
 .transactions-panel { margin-top: 14px; min-height: 260px; }
 .transaction-heading { align-items: center; margin-bottom: 13px; }.list-tools { display: flex; gap: 8px; }.list-tools input, .list-tools select { border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; outline: 0; color: var(--ink); background: #fbfcfa; font-size: 11px; }.list-tools input:focus { border-color: var(--green); }
 .date-range-filter { position: relative; display: flex; align-items: center; gap: 5px; padding-right: 31px; }
@@ -95,6 +133,13 @@ h2 { margin: 0; font-size: 18px; letter-spacing: -.4px; }
 .date-range-separator { color: #a7afa9; }
 .clear-date-btn { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); width: 25px; height: 25px; padding: 0; border: 0; border-radius: 7px; background: #e9eeea; color: var(--muted); font-size: 16px; line-height: 1; }
 .clear-date-btn:hover { color: var(--coral); background: #fff1ed; }
+.filtered-summary { display: grid; grid-template-columns: .65fr repeat(3, 1fr); gap: 8px; margin: 0 0 13px; }
+.filtered-summary > div { min-width: 0; padding: 10px 12px; border-radius: 11px; background: #f4f7f3; }
+.filtered-summary span { display: block; margin-bottom: 4px; color: var(--muted); font-size: 9px; }
+.filtered-summary strong { display: block; overflow: hidden; text-overflow: ellipsis; font-size: 12px; white-space: nowrap; }
+.filtered-income strong { color: var(--green); }
+.filtered-expense strong, #filteredBalance.negative { color: var(--coral); }
+#filteredBalance.positive { color: var(--green); }
 .transaction-list { display: grid; }.transaction-item { display: grid; grid-template-columns: 42px 1.3fr 1fr 100px 28px; gap: 12px; align-items: center; min-height: 66px; border-top: 1px solid var(--line); }.transaction-icon { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-size: 17px; }.transaction-name strong { display: block; font-size: 12px; }.transaction-name span, .transaction-category, .transaction-date { color: var(--muted); font-size: 10px; }.transaction-category { display: flex; align-items: center; gap: 6px; }.category-dot { width: 6px; height: 6px; border-radius: 50%; }.transaction-amount { text-align: right; font-weight: 800; font-size: 12px; }.transaction-amount.income { color: var(--green); }.delete-btn { border: 0; background: transparent; color: #b3bcb8; border-radius: 6px; font-size: 16px; opacity: 0; transition: .2s; }.transaction-item:hover .delete-btn { opacity: 1; }.delete-btn:hover { color: var(--coral); background: #fff1ed; }
 .empty-state { padding: 35px 10px; text-align: center; color: var(--muted); }.empty-state div { font-size: 28px; }.empty-state h3 { color: var(--ink); font-size: 15px; margin: 8px 0 3px; }.empty-state p { margin: 0 0 10px; font-size: 11px; }.text-btn { color: var(--green); background: transparent; border: 0; font-weight: 700; }
 .modal-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px; background: rgba(11,32,27,.55); backdrop-filter: blur(5px); animation: fade .2s; }.modal-backdrop[hidden] { display: none; }.modal { width: min(560px, 100%); max-height: 90vh; overflow: auto; border-radius: 22px; background: #fff; padding: 28px; box-shadow: 0 30px 80px rgba(0,0,0,.2); position: relative; animation: rise .25s; }.small-modal { width: min(420px, 100%); }.close-btn { position: absolute; right: 18px; top: 18px; width: 30px; height: 30px; border: 0; border-radius: 50%; color: var(--muted); background: #f1f3ef; font-size: 20px; }.modal h2 { font-size: 24px; margin-bottom: 22px; }.segmented { display: grid; grid-template-columns: 1fr 1fr; padding: 4px; border-radius: 11px; background: #f1f3ef; margin-bottom: 18px; }.segmented label { cursor: pointer; }.segmented input { display: none; }.segmented span { display: block; padding: 9px; border-radius: 8px; text-align: center; color: var(--muted); font-size: 12px; font-weight: 700; }.segmented input:checked + span { background: #fff; color: var(--green); box-shadow: 0 3px 9px rgba(0,0,0,.06); }.field { display: grid; gap: 7px; margin-bottom: 15px; }.field > span { color: var(--muted); font-size: 11px; font-weight: 600; }.field em { font-style: normal; font-weight: 400; }.field input, .field select { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; outline: 0; color: var(--ink); background: #fbfcfa; }.field input:focus, .field select:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(31,107,87,.08); }.amount-field > div { display: flex; align-items: center; border-bottom: 2px solid var(--ink); }.amount-field input { border: 0; border-radius: 0; padding: 8px 0; background: transparent; font: 800 30px "Be Vietnam Pro", system-ui, sans-serif; }.amount-field input:focus { box-shadow: none; }.amount-field b { font-size: 22px; }.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }.submit-btn { width: 100%; margin-top: 5px; }
@@ -192,6 +237,7 @@ h1 { font-size: clamp(28px, 3.2vw, 40px); line-height: 1.14; letter-spacing: -1.
 .transaction-item:hover .delete-btn, .delete-btn:focus-visible { opacity: 1; }
 
 .modal-backdrop { background: rgba(9, 34, 28, .62); }
+.repayment-creditor { margin: -12px 0 20px; padding: 10px 12px; border-radius: 11px; color: var(--muted); background: #f3f6f2; font-size: 11px; }
 .modal { border-radius: 26px; padding: 32px; border: 1px solid rgba(255,255,255,.5); }
 .close-btn { width: 34px; height: 34px; }
 .segmented { border-radius: 14px; padding: 5px; }
@@ -222,6 +268,7 @@ h1 { font-size: clamp(28px, 3.2vw, 40px); line-height: 1.14; letter-spacing: -1.
   .date-range-filter { flex: 1 1 100%; width: 100%; }
   .date-range-filter label { flex: 1; }
   .date-range-filter input { width: 100%; min-width: 0; }
+  .debt-list { grid-template-columns: 1fr; }
   .mobile-fab { display: grid; place-items: center; position: fixed; z-index: 16; right: 18px; bottom: 84px; width: 54px; height: 54px; border: 4px solid var(--cream); border-radius: 18px; background: var(--green); color: #fff; box-shadow: 0 12px 28px rgba(23,107,85,.32); font-size: 24px; }
 }
 
@@ -238,6 +285,12 @@ h1 { font-size: clamp(28px, 3.2vw, 40px); line-height: 1.14; letter-spacing: -1.
   .list-tools { display: grid; grid-template-columns: 1fr 1fr; }
   .list-tools > #searchInput { grid-column: 1 / -1; width: 100%; }
   .date-range-filter { grid-column: 1 / -1; }
+  .filtered-summary { grid-template-columns: 1fr 1fr; }
+  .debt-heading { align-items: flex-start; }
+  .debt-summary-grid { grid-template-columns: 1fr; }
+  .debt-summary-grid > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .debt-summary-grid span { margin: 0; }
+  .debt-summary-grid strong { font-size: 14px; }
   .donut-layout { gap: 24px; }
   .category-legend { grid-template-columns: 1fr; }
   .transaction-meta { display: none; }
