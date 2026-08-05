@@ -35,6 +35,7 @@ const syncEntries = {
   timeTasks: "nhip.tasks",
   timeSessions: "nhip.sessions",
   timeSessionDate: "nhip.sessionDate",
+  focusState: "nhip.focus",
   notesData: "may-note-data-v1",
   notesView: "may-note-view",
   notesTheme: "may-note-theme",
