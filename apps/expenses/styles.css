@@ -341,7 +341,10 @@ h1 { font-size: clamp(28px, 3.2vw, 40px); line-height: 1.14; letter-spacing: -1.
   .list-tools { display: grid; grid-template-columns: 1fr 1fr; }
   .list-tools > #searchInput { grid-column: 1 / -1; width: 100%; }
   .date-range-filter { grid-column: 1 / -1; }
-  .filtered-summary { grid-template-columns: 1fr 1fr; }
+  .filtered-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+  .filtered-summary > div { padding: 8px 5px; border-radius: 9px; }
+  .filtered-summary span { margin-bottom: 3px; font-size: 7px; letter-spacing: -.1px; }
+  .filtered-summary strong { font-size: clamp(7.5px, 2.25vw, 9px); letter-spacing: -.25px; font-variant-numeric: tabular-nums; }
   .transaction-pagination { align-items: flex-start; flex-direction: column; }
   .debt-heading { align-items: flex-start; }
   .fund-heading { align-items: flex-start; flex-direction: column; }
