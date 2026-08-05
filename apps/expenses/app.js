@@ -70,6 +70,8 @@ let selectedMonth = currentMonth();
 let toastTimer;
 let undoTimer;
 let pendingDeletion = null;
+let transactionPage = 1;
+const TRANSACTIONS_PER_PAGE = 10;
 
 function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
 function getCategory(type, id) { return categories[type].find(item => item.id === id) || categories[type][categories[type].length - 1]; }
@@ -208,6 +210,7 @@ function renderDebts() {
 function renderTransactions() {
   const query = $("#searchInput").value.trim().toLowerCase();
   const filter = $("#typeFilter").value;
+  const categoryFilter = $("#historyCategoryFilter").value;
   const dateFrom = $("#dateFrom").value;
   const dateTo = $("#dateTo").value;
   const source = dateFrom || dateTo ? data.transactions : monthTransactions();
@@ -215,6 +218,7 @@ function renderTransactions() {
     (!dateFrom || item.date >= dateFrom) &&
     (!dateTo || item.date <= dateTo) &&
     (filter === "all" || item.type === filter) &&
+    (categoryFilter === "all" || item.category === categoryFilter) &&
     (item.name.toLowerCase().includes(query) || (item.note || "").toLowerCase().includes(query))
   ).sort((a,b) => b.date.localeCompare(a.date));
   const filteredIncome = filtered.filter(item => item.type === "income").reduce((sum, item) => sum + item.amount, 0);
@@ -225,7 +229,11 @@ function renderTransactions() {
   $("#filteredExpense").textContent = money(filteredExpense);
   $("#filteredBalance").textContent = money(filteredBalance);
   $("#filteredBalance").className = filteredBalance > 0 ? "positive" : filteredBalance < 0 ? "negative" : "";
-  $("#transactionList").innerHTML = filtered.map(item => {
+  const pageCount = Math.max(1, Math.ceil(filtered.length / TRANSACTIONS_PER_PAGE));
+  transactionPage = Math.min(transactionPage, pageCount);
+  const pageStart = (transactionPage - 1) * TRANSACTIONS_PER_PAGE;
+  const pageItems = filtered.slice(pageStart, pageStart + TRANSACTIONS_PER_PAGE);
+  $("#transactionList").innerHTML = pageItems.map(item => {
     const category = getCategory(item.type, item.category);
     const date = new Date(item.date + "T00:00:00").toLocaleDateString("vi-VN", { day: "2-digit", month: "short", year: "numeric" });
     return `<div class="transaction-item">
@@ -241,7 +249,37 @@ function renderTransactions() {
   }).join("");
   $("#emptyState").hidden = filtered.length !== 0;
   $("#clearDateFilter").hidden = !dateFrom && !dateTo;
+  renderTransactionPagination(filtered.length, pageCount, pageStart, pageItems.length);
 }
+
+function renderTransactionPagination(total, pageCount, pageStart, visibleCount) {
+  const pagination = $("#transactionPagination");
+  pagination.hidden = total === 0;
+  if (!total) { pagination.innerHTML = ""; return; }
+  const pageButtons = Array.from({ length: pageCount }, (_, index) => {
+    const page = index + 1;
+    return `<button type="button" data-page="${page}" class="page-number ${page === transactionPage ? "active" : ""}" aria-label="Trang ${page}" ${page === transactionPage ? 'aria-current="page"' : ""}>${page}</button>`;
+  }).join("");
+  pagination.innerHTML = `
+    <span class="page-range">${pageStart + 1}–${pageStart + visibleCount} / ${total} giao dịch</span>
+    <div class="page-controls">
+      <button type="button" data-page="${transactionPage - 1}" aria-label="Trang trước" ${transactionPage === 1 ? "disabled" : ""}>‹</button>
+      ${pageButtons}
+      <button type="button" data-page="${transactionPage + 1}" aria-label="Trang sau" ${transactionPage === pageCount ? "disabled" : ""}>›</button>
+    </div>`;
+}
+
+function fillHistoryCategoryFilter() {
+  const selectedType = $("#typeFilter").value;
+  const groups = selectedType === "all" ? ["expense", "income"] : [selectedType];
+  $("#historyCategoryFilter").innerHTML = `<option value="all">Tất cả danh mục</option>` + groups.map(type =>
+    `<optgroup label="${type === "expense" ? "Khoản chi" : "Khoản thu"}">${categories[type].map(category =>
+      `<option value="${category.id}">${category.icon} ${category.name}</option>`
+    ).join("")}</optgroup>`
+  ).join("");
+}
+
+function resetTransactionPage() { transactionPage = 1; }
 
 function escapeHtml(text) { const el = document.createElement("div"); el.textContent = text; return el.innerHTML; }
 function fillCategories(type) { $("#categoryInput").innerHTML = categories[type].map(item => `<option value="${item.id}">${item.icon}  ${item.name}</option>`).join(""); }
@@ -304,6 +342,7 @@ function formatAmountInput(event) { const value = parseAmount(event.target.value
 $("#todayLabel").textContent = new Date().toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 $("#monthFilter").value = selectedMonth;
 fillCategories("expense");
+fillHistoryCategoryFilter();
 render();
 
 $("#openTransactionBtn").addEventListener("click", () => openModal());
@@ -332,10 +371,19 @@ $("#monthFilter").addEventListener("change", event => {
   $("#dateTo").value = "";
   $("#dateFrom").max = "";
   $("#dateTo").min = "";
+  resetTransactionPage();
   render();
 });
-$("#searchInput").addEventListener("input", renderTransactions);
-$("#typeFilter").addEventListener("change", renderTransactions);
+$("#searchInput").addEventListener("input", () => { resetTransactionPage(); renderTransactions(); });
+$("#typeFilter").addEventListener("change", () => { resetTransactionPage(); fillHistoryCategoryFilter(); renderTransactions(); });
+$("#historyCategoryFilter").addEventListener("change", () => { resetTransactionPage(); renderTransactions(); });
+$("#transactionPagination").addEventListener("click", event => {
+  const button = event.target.closest("[data-page]");
+  if (!button || button.disabled) return;
+  transactionPage = Number(button.dataset.page);
+  renderTransactions();
+  $("#transactionList").scrollIntoView({ behavior: "smooth", block: "start" });
+});
 function updateDateRange(changedInput) {
   const from = $("#dateFrom");
   const to = $("#dateTo");
@@ -345,6 +393,7 @@ function updateDateRange(changedInput) {
   }
   to.min = from.value || "";
   from.max = to.value || "";
+  resetTransactionPage();
   renderTransactions();
 }
 $("#dateFrom").addEventListener("change", event => updateDateRange(event.target));
@@ -354,6 +403,7 @@ $("#clearDateFilter").addEventListener("click", () => {
   $("#dateTo").value = "";
   $("#dateFrom").max = "";
   $("#dateTo").min = "";
+  resetTransactionPage();
   renderTransactions();
 });
 

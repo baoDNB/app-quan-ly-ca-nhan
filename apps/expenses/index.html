@@ -161,6 +161,7 @@
               <option value="expense">Khoản chi</option>
               <option value="income">Khoản thu</option>
             </select>
+            <select id="historyCategoryFilter" aria-label="Lọc danh mục giao dịch"></select>
           </div>
         </div>
         <div class="filtered-summary" aria-label="Tổng theo bộ lọc hiện tại">
@@ -170,6 +171,7 @@
           <div><span>Chênh lệch</span><strong id="filteredBalance">0 ₫</strong></div>
         </div>
         <div class="transaction-list" id="transactionList"></div>
+        <nav class="transaction-pagination" id="transactionPagination" aria-label="Phân trang lịch sử giao dịch" hidden></nav>
         <div class="empty-state" id="emptyState" hidden>
           <div>☁</div><h3>Chưa có giao dịch nào</h3><p>Thêm khoản thu hoặc chi đầu tiên của bạn.</p>
           <button class="text-btn" id="emptyAddBtn">＋ Thêm giao dịch</button>
