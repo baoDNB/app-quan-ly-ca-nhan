@@ -13,12 +13,12 @@
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--paper); color: var(--ink); font-family: "DM Sans", sans-serif; min-height: 100vh; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Be Vietnam Pro", system-ui, sans-serif; min-height: 100vh; }
 button, input, select, textarea { font: inherit; }
 button { color: inherit; }
 .app-shell { display: grid; grid-template-columns: 245px 1fr; min-height: 100vh; }
 .sidebar { padding: 34px 24px 24px; border-right: 1px solid var(--line); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; background: rgba(245,242,236,.92); z-index: 10; }
-.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); font: 800 23px Manrope, sans-serif; margin: 0 10px 42px; }
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); font: 800 23px "Be Vietnam Pro", system-ui, sans-serif; margin: 0 10px 42px; }
 .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; color: white; background: var(--green); border-radius: 11px 11px 11px 3px; font-size: 18px; }
 .nav { display: grid; gap: 6px; }
 .nav-item { border: 0; background: transparent; border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; font-weight: 600; cursor: pointer; text-align: left; }
@@ -31,12 +31,12 @@ button { color: inherit; }
 .category-item { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #5d5f59; }
 .category-dot { width: 9px; height: 9px; border-radius: 50%; }
 .category-count { margin-left: auto; font-size: 12px; color: #9c9d97; }
-.sidebar-quote { margin-top: auto; border: 1px solid var(--line); background: rgba(255,255,255,.45); border-radius: 18px; padding: 17px; color: #595b55; font: 600 13px/1.6 Manrope, sans-serif; }
+.sidebar-quote { margin-top: auto; border: 1px solid var(--line); background: rgba(255,255,255,.45); border-radius: 18px; padding: 17px; color: #595b55; font: 600 13px/1.6 "Be Vietnam Pro", system-ui, sans-serif; }
 .sidebar-quote span { color: var(--coral); }
 .sidebar-quote p { margin: 7px 0 0; }
 .main-content { padding: 36px clamp(28px, 4vw, 64px) 56px; max-width: 1540px; width: 100%; margin: 0 auto; }
 .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; }
-h1, h2 { font-family: Manrope, sans-serif; margin: 0; letter-spacing: -.035em; }
+h1, h2 { font-family: "Be Vietnam Pro", system-ui, sans-serif; margin: 0; letter-spacing: -.035em; }
 h1 { font-size: clamp(28px, 3vw, 38px); }
 h2 { font-size: 20px; }
 .topbar-actions { display: flex; gap: 10px; }
@@ -48,13 +48,13 @@ h2 { font-size: 20px; }
 .summary-card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; min-height: 126px; padding: 22px 24px; box-shadow: var(--shadow); }
 .progress-card { background: var(--green); color: white; border-color: var(--green); display: flex; align-items: center; justify-content: space-between; }
 .progress-card .eyebrow { color: #b9d1c9; }
-.summary-copy strong { font: 700 23px Manrope, sans-serif; }
+.summary-copy strong { font: 700 23px "Be Vietnam Pro", system-ui, sans-serif; }
 .summary-copy > p:last-child { color: #cbded8; font-size: 13px; margin: 8px 0 0; }
 .progress-ring { --progress: 0; width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center; flex: 0 0 auto; background: conic-gradient(var(--yellow) calc(var(--progress) * 1%), rgba(255,255,255,.18) 0); position: relative; }
 .progress-ring::after { content: ""; position: absolute; width: 60px; height: 60px; background: var(--green); border-radius: 50%; }
 .progress-ring span { z-index: 1; font-weight: 700; font-size: 14px; }
 .stat-card { display: flex; align-items: center; gap: 17px; }
-.stat-card strong { font: 700 20px Manrope, sans-serif; }
+.stat-card strong { font: 700 20px "Be Vietnam Pro", system-ui, sans-serif; }
 .stat-icon { width: 43px; height: 43px; display: grid; place-items: center; border-radius: 13px; font-size: 20px; }
 .stat-icon.coral { background: #f6e2dc; color: var(--coral); }
 .stat-icon.green { background: var(--green-soft); color: var(--green); }
@@ -83,7 +83,7 @@ h2 { font-size: 20px; }
 .task-category { padding: 3px 8px; border-radius: 20px; background: var(--category-soft); color: var(--category-color); font-weight: 600; }
 .task-more { border: 0; background: transparent; color: var(--muted); font-size: 20px; cursor: pointer; width: 30px; }
 .empty-state { border: 1px dashed #cbc8c0; background: #fbf9f4; width: 100%; min-height: 270px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: var(--muted); }
-.empty-state strong { color: var(--ink); margin: 12px 0 5px; font: 700 16px Manrope, sans-serif; }
+.empty-state strong { color: var(--ink); margin: 12px 0 5px; font: 700 16px "Be Vietnam Pro", system-ui, sans-serif; }
 .empty-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--green-soft); color: var(--green); font-size: 23px; }
 .focus-card { padding: 25px; text-align: center; align-self: start; }
 .focus-card-head { text-align: left; }
@@ -94,7 +94,7 @@ h2 { font-size: 20px; }
 .timer-progress { stroke: var(--coral); stroke-linecap: round; stroke-dasharray: 603.2; stroke-dashoffset: 0; transition: stroke-dashoffset .5s linear; }
 .timer-display { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .timer-display span { color: var(--muted); font-size: 13px; }
-.timer-display strong { font: 800 45px Manrope, sans-serif; letter-spacing: -.06em; }
+.timer-display strong { font: 800 45px "Be Vietnam Pro", system-ui, sans-serif; letter-spacing: -.06em; }
 .timer-button { width: 100%; background: var(--coral); color: white; }
 .text-button { border: 0; background: transparent; color: var(--muted); font-size: 12px; margin: 10px 0; cursor: pointer; }
 .session-dots { display: flex; justify-content: center; gap: 7px; margin-top: 15px; }
