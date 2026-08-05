@@ -26,6 +26,23 @@ let state = {
 };
 if (state.sessionDate !== today()) { state.sessions = 0; state.sessionDate = today(); }
 
+const FOCUS_KEY = "nhip.focus";
+const FOCUS_DURATIONS = { focus: 25 * 60, break: 5 * 60 };
+function loadFocusState() {
+  const fallback = { mode: "focus", remaining: FOCUS_DURATIONS.focus, running: false, endAt: null, taskId: "" };
+  try {
+    const saved = JSON.parse(localStorage.getItem(FOCUS_KEY) || "null");
+    if (!saved || !FOCUS_DURATIONS[saved.mode]) return fallback;
+    return {
+      ...fallback,
+      ...saved,
+      remaining: Math.max(0, Number(saved.remaining) || FOCUS_DURATIONS[saved.mode]),
+      endAt: saved.endAt ? Number(saved.endAt) : null
+    };
+  } catch { return fallback; }
+}
+let focusState = loadFocusState();
+
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
 const els = {
@@ -34,7 +51,10 @@ const els = {
   progressPercent: $("#progressPercent"), plannedTime: $("#plannedTime"), focusStreak: $("#focusStreak"),
   selectedDateLabel: $("#selectedDateLabel"), datePicker: $("#datePicker"), viewTitle: $("#viewTitle"),
   backdrop: $("#modalBackdrop"), form: $("#taskForm"), modalTitle: $("#modalTitle"), deleteTask: $("#deleteTask"),
-  timerTime: $("#timerTime"), timerToggle: $("#timerToggle"), timerProgress: $("#timerProgress"), sessionDots: $("#sessionDots")
+  timerTime: $("#timerTime"), timerMode: $("#timerMode"), timerToggle: $("#timerToggle"), timerProgress: $("#timerProgress"), sessionDots: $("#sessionDots"),
+  focusTaskSelect: $("#focusTaskSelect"), focusOverlay: $("#focusOverlay"), focusOverlayTaskSelect: $("#focusOverlayTaskSelect"),
+  focusOverlayTime: $("#focusOverlayTime"), focusOverlayMode: $("#focusOverlayMode"), focusOverlayRing: $("#focusOverlayRing"),
+  focusOverlayToggle: $("#focusOverlayToggle"), focusOverlayHint: $("#focusOverlayHint"), focusOverlaySessions: $("#focusOverlaySessions")
 };
 
 function save() {
@@ -95,6 +115,7 @@ function render() {
   els.viewTitle.textContent = state.view === "completed" ? "Công việc đã hoàn thành" : state.view === "upcoming" ? "Những việc sắp tới" : "Lịch trình hôm nay";
   renderCategories();
   renderSessionDots();
+  renderFocusTaskOptions();
 }
 
 function renderCategories() {
@@ -173,7 +194,11 @@ $("#openTask").addEventListener("click", () => openModal());
 els.emptyAdd.addEventListener("click", () => openModal());
 $$('.close-modal').forEach(btn => btn.addEventListener("click", closeModal));
 els.backdrop.addEventListener("click", e => { if (e.target === els.backdrop) closeModal(); });
-document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  if (!els.focusOverlay.classList.contains("hidden")) closeFocusOverlay();
+  else closeModal();
+});
 
 function changeDay(amount) {
   const date = new Date(`${state.selectedDate}T12:00:00`); date.setDate(date.getDate() + amount);
@@ -193,31 +218,181 @@ $$('.nav-item').forEach(btn => btn.addEventListener("click", () => {
 }));
 $("#menuButton").addEventListener("click", () => $(".sidebar").classList.toggle("open"));
 
-const TIMER_TOTAL = 25 * 60;
-let timerLeft = TIMER_TOTAL, timerRunning = false, timerInterval;
+let timerInterval = null;
+let audioContext = null;
+
+function saveFocus() { localStorage.setItem(FOCUS_KEY, JSON.stringify(focusState)); }
+
+function currentTimerLeft() {
+  if (focusState.running && focusState.endAt) return Math.max(0, Math.ceil((focusState.endAt - Date.now()) / 1000));
+  return Math.max(0, focusState.remaining);
+}
+
+function selectedFocusTask() { return state.tasks.find(task => task.id === focusState.taskId); }
+
+function renderFocusTaskOptions() {
+  const available = state.tasks
+    .filter(task => !task.completed)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+  if (focusState.taskId && !available.some(task => task.id === focusState.taskId)) {
+    focusState.taskId = ""; saveFocus();
+  }
+  const options = `<option value="">Không chọn công việc</option>${available.map(task =>
+    `<option value="${task.id}">${escapeHtml(task.title)} · ${formatDate(task.date)}</option>`
+  ).join("")}`;
+  [els.focusTaskSelect, els.focusOverlayTaskSelect].forEach(select => {
+    select.innerHTML = options;
+    select.value = focusState.taskId;
+  });
+}
+
 function updateTimer() {
-  els.timerTime.textContent = `${pad(Math.floor(timerLeft / 60))}:${pad(timerLeft % 60)}`;
-  els.timerProgress.style.strokeDashoffset = 603.2 * (1 - timerLeft / TIMER_TOTAL);
-  document.title = timerRunning ? `${els.timerTime.textContent} — Nhịp` : "Nhịp — Quản lý thời gian";
+  const left = currentTimerLeft();
+  if (focusState.running && left <= 0) { completeTimer(); return; }
+  const total = FOCUS_DURATIONS[focusState.mode];
+  const formatted = `${pad(Math.floor(left / 60))}:${pad(left % 60)}`;
+  const remainingPercent = Math.max(0, Math.min(100, left / total * 100));
+  const modeLabel = focusState.mode === "focus" ? "Tập trung" : "Nghỉ ngắn";
+  const toggleLabel = focusState.running ? "Tạm dừng" : left < total ? "Tiếp tục" : focusState.mode === "focus" ? "Bắt đầu phiên" : "Bắt đầu nghỉ";
+  els.timerTime.textContent = formatted;
+  els.timerMode.textContent = modeLabel;
+  els.timerProgress.style.strokeDashoffset = 603.2 * (1 - remainingPercent / 100);
+  els.timerToggle.textContent = toggleLabel;
+  els.focusOverlayTime.textContent = formatted;
+  els.focusOverlayMode.textContent = modeLabel;
+  els.focusOverlayToggle.textContent = toggleLabel;
+  els.focusOverlayRing.style.setProperty("--timer-progress", remainingPercent);
+  els.focusOverlay.classList.toggle("break-mode", focusState.mode === "break");
+  $("#focusOverlayEyebrow").textContent = focusState.mode === "focus" ? "PHIÊN TẬP TRUNG" : "NGHỈ NGẮN";
+  $("#focusOverlayTitle").textContent = focusState.mode === "focus" ? "Dành trọn sự chú ý cho một việc" : "Thả lỏng để lấy lại năng lượng";
+  $("#focusSkip").textContent = focusState.mode === "focus" ? "Chuyển sang nghỉ" : "Bỏ qua nghỉ";
+  const task = selectedFocusTask();
+  els.focusOverlayHint.textContent = focusState.mode === "break"
+    ? "Đứng dậy, uống nước và để mắt nghỉ khỏi màn hình."
+    : task ? `Bạn đang tập trung vào: ${task.title}` : "Tắt thông báo không cần thiết và bắt đầu khi bạn sẵn sàng.";
+  els.focusOverlaySessions.textContent = `${state.sessions} phiên hôm nay`;
+  document.title = focusState.running ? `${formatted} · ${modeLabel} — Nhịp` : "Nhịp — Quản lý thời gian";
 }
+
+function restartTimerInterval() {
+  clearInterval(timerInterval);
+  timerInterval = focusState.running ? setInterval(updateTimer, 500) : null;
+}
+
+function primeAudio() {
+  try {
+    audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+    if (audioContext.state === "suspended") audioContext.resume();
+  } catch {}
+}
+
+function playCompletionSound() {
+  try {
+    primeAudio();
+    [0, .18].forEach((delay, index) => {
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      oscillator.frequency.value = index ? 740 : 587;
+      gain.gain.setValueAtTime(.0001, audioContext.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(.18, audioContext.currentTime + delay + .02);
+      gain.gain.exponentialRampToValueAtTime(.0001, audioContext.currentTime + delay + .28);
+      oscillator.connect(gain).connect(audioContext.destination);
+      oscillator.start(audioContext.currentTime + delay);
+      oscillator.stop(audioContext.currentTime + delay + .3);
+    });
+  } catch {}
+}
+
+function sendFocusNotification(title, body) {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  try { new Notification(title, { body, tag: "nhip-focus" }); } catch {}
+}
+
+function requestFocusNotifications() {
+  if ("Notification" in window && Notification.permission === "default") Notification.requestPermission().catch(() => {});
+}
+
+function completeTimer() {
+  const completedMode = focusState.mode;
+  focusState.running = false;
+  focusState.endAt = null;
+  if (completedMode === "focus") {
+    if (state.sessionDate !== today()) { state.sessions = 0; state.sessionDate = today(); }
+    state.sessions++;
+    focusState.mode = "break";
+    focusState.remaining = FOCUS_DURATIONS.break;
+    save();
+    toast("Hoàn thành phiên tập trung — nghỉ 5 phút nhé! ✦");
+    sendFocusNotification("Hoàn thành phiên tập trung", "Đã đến lúc nghỉ ngắn 5 phút.");
+  } else {
+    focusState.mode = "focus";
+    focusState.remaining = FOCUS_DURATIONS.focus;
+    toast("Hết giờ nghỉ — sẵn sàng cho phiên mới!");
+    sendFocusNotification("Kết thúc giờ nghỉ", "Bạn đã sẵn sàng cho phiên tập trung tiếp theo.");
+  }
+  saveFocus(); playCompletionSound(); restartTimerInterval(); render(); updateTimer();
+}
+
 function toggleTimer() {
-  timerRunning = !timerRunning;
-  els.timerToggle.textContent = timerRunning ? "Tạm dừng" : timerLeft < TIMER_TOTAL ? "Tiếp tục" : "Bắt đầu phiên";
-  if (timerRunning) timerInterval = setInterval(() => {
-    timerLeft--; updateTimer();
-    if (timerLeft <= 0) {
-      clearInterval(timerInterval); timerRunning = false; timerLeft = TIMER_TOTAL; state.sessions++; save(); render(); updateTimer();
-      els.timerToggle.textContent = "Bắt đầu phiên mới"; toast("Hoàn thành một phiên tập trung! ✦");
-    }
-  }, 1000); else clearInterval(timerInterval);
+  if (focusState.running) {
+    focusState.remaining = currentTimerLeft();
+    focusState.running = false;
+    focusState.endAt = null;
+  } else {
+    if (focusState.remaining <= 0) focusState.remaining = FOCUS_DURATIONS[focusState.mode];
+    focusState.running = true;
+    focusState.endAt = Date.now() + focusState.remaining * 1000;
+    primeAudio(); requestFocusNotifications();
+  }
+  saveFocus(); restartTimerInterval(); updateTimer();
 }
+
+function resetTimer() {
+  focusState.running = false;
+  focusState.endAt = null;
+  focusState.remaining = FOCUS_DURATIONS[focusState.mode];
+  saveFocus(); restartTimerInterval(); updateTimer();
+}
+
+function switchTimerMode() {
+  focusState.mode = focusState.mode === "focus" ? "break" : "focus";
+  focusState.running = false;
+  focusState.endAt = null;
+  focusState.remaining = FOCUS_DURATIONS[focusState.mode];
+  saveFocus(); restartTimerInterval(); updateTimer();
+}
+
+function openFocusOverlay() {
+  els.focusOverlay.classList.remove("hidden");
+  document.body.classList.add("focus-open");
+  updateTimer();
+}
+function closeFocusOverlay() {
+  els.focusOverlay.classList.add("hidden");
+  document.body.classList.remove("focus-open");
+}
+
+function selectFocusTask(event) {
+  focusState.taskId = event.target.value;
+  saveFocus();
+  [els.focusTaskSelect, els.focusOverlayTaskSelect].forEach(select => { select.value = focusState.taskId; });
+  updateTimer();
+}
+
 els.timerToggle.addEventListener("click", toggleTimer);
-$("#timerReset").addEventListener("click", () => { clearInterval(timerInterval); timerRunning = false; timerLeft = TIMER_TOTAL; els.timerToggle.textContent = "Bắt đầu phiên"; updateTimer(); });
-$("#openFocus").addEventListener("click", () => { $(".focus-card").scrollIntoView({ behavior: "smooth", block: "center" }); });
-$("#focusSettings").addEventListener("click", () => toast("Mỗi phiên tập trung kéo dài 25 phút"));
+els.focusOverlayToggle.addEventListener("click", toggleTimer);
+$("#timerReset").addEventListener("click", resetTimer);
+$("#focusOverlayReset").addEventListener("click", resetTimer);
+$("#focusSkip").addEventListener("click", switchTimerMode);
+$("#openFocus").addEventListener("click", openFocusOverlay);
+$("#focusSettings").addEventListener("click", openFocusOverlay);
+$("#closeFocus").addEventListener("click", closeFocusOverlay);
+els.focusTaskSelect.addEventListener("change", selectFocusTask);
+els.focusOverlayTaskSelect.addEventListener("change", selectFocusTask);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) updateTimer(); });
 function renderSessionDots() { els.sessionDots.innerHTML = Array.from({ length: Math.max(4, state.sessions) }, (_, i) => `<span class="session-dot ${i < state.sessions ? "done" : ""}"></span>`).join(""); }
 
 const now = new Date();
 $("#todayLabel").textContent = formatDate(today(), true);
 $("#greeting").textContent = now.getHours() < 11 ? "Chào buổi sáng!" : now.getHours() < 18 ? "Chào buổi chiều!" : "Chào buổi tối!";
-render(); updateTimer();
+render(); restartTimerInterval(); updateTimer();

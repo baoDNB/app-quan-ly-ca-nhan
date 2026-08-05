@@ -113,6 +113,9 @@
               <strong id="timerTime">25:00</strong>
             </div>
           </div>
+          <label class="focus-task-label">Đang tập trung vào
+            <select id="focusTaskSelect" aria-label="Chọn công việc tập trung"></select>
+          </label>
           <button id="timerToggle" class="timer-button">Bắt đầu phiên</button>
           <button id="timerReset" class="text-button">Đặt lại</button>
           <div class="session-dots" id="sessionDots" aria-label="Số phiên hôm nay"></div>
@@ -121,6 +124,33 @@
       </section>
     </main>
   </div>
+
+  <section id="focusOverlay" class="focus-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="focusOverlayTitle">
+    <div class="focus-overlay-top">
+      <a class="focus-overlay-brand" href="#"><span>N</span> Nhịp tập trung</a>
+      <button id="closeFocus" class="focus-close" aria-label="Thu nhỏ không gian tập trung">×</button>
+    </div>
+    <div class="focus-overlay-content">
+      <p id="focusOverlayEyebrow" class="focus-overlay-eyebrow">PHIÊN TẬP TRUNG</p>
+      <h2 id="focusOverlayTitle">Dành trọn sự chú ý cho một việc</h2>
+      <label class="focus-overlay-task">Công việc
+        <select id="focusOverlayTaskSelect" aria-label="Chọn công việc cho phiên tập trung"></select>
+      </label>
+      <div id="focusOverlayRing" class="focus-overlay-ring" style="--timer-progress: 0">
+        <div>
+          <span id="focusOverlayMode">Tập trung</span>
+          <strong id="focusOverlayTime">25:00</strong>
+        </div>
+      </div>
+      <p id="focusOverlayHint" class="focus-overlay-hint">Tắt thông báo không cần thiết và bắt đầu khi bạn sẵn sàng.</p>
+      <div class="focus-overlay-actions">
+        <button id="focusOverlayToggle" class="focus-main-action">Bắt đầu phiên</button>
+        <button id="focusSkip" class="focus-secondary-action">Chuyển sang nghỉ</button>
+        <button id="focusOverlayReset" class="focus-secondary-action">Đặt lại</button>
+      </div>
+      <div class="focus-overlay-sessions"><span id="focusOverlaySessions">0 phiên hôm nay</span><span>25 phút tập trung · 5 phút nghỉ</span></div>
+    </div>
+  </section>
 
   <div id="modalBackdrop" class="modal-backdrop hidden">
     <section id="taskModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
