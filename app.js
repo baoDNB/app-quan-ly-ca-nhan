@@ -31,15 +31,16 @@ const modules = {
   expenses: { url: "/apps/expenses/", title: "Ví Nhỏ — Quản lý chi tiêu" }
 };
 
-const syncKeys = [
-  "nhip.tasks",
-  "nhip.sessions",
-  "nhip.sessionDate",
-  "may-note-data-v1",
-  "may-note-view",
-  "may-note-theme",
-  "vi-nho-data-v1"
-];
+const syncEntries = {
+  timeTasks: "nhip.tasks",
+  timeSessions: "nhip.sessions",
+  timeSessionDate: "nhip.sessionDate",
+  notesData: "may-note-data-v1",
+  notesView: "may-note-view",
+  notesTheme: "may-note-theme",
+  expensesData: "vi-nho-data-v1"
+};
+const syncKeys = Object.values(syncEntries);
 
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
@@ -62,17 +63,17 @@ function setSyncStatus(text, state = "") {
 
 function localState() {
   const values = {};
-  syncKeys.forEach((key) => {
+  Object.entries(syncEntries).forEach(([cloudKey, key]) => {
     const value = localStorage.getItem(key);
-    if (value !== null) values[key] = value;
+    if (value !== null) values[cloudKey] = value;
   });
   return values;
 }
 
 function applyCloudState(values = {}) {
   let changed = false;
-  syncKeys.forEach((key) => {
-    const next = Object.prototype.hasOwnProperty.call(values, key) ? values[key] : null;
+  Object.entries(syncEntries).forEach(([cloudKey, key]) => {
+    const next = Object.prototype.hasOwnProperty.call(values, cloudKey) ? values[cloudKey] : null;
     const current = localStorage.getItem(key);
     if (next === null && current !== null) {
       localStorage.removeItem(key);
