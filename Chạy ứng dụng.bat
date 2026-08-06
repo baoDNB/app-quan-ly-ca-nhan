@@ -8,5 +8,11 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
-node server.js
+if not exist node_modules (
+  echo Đang cài thư viện lần đầu...
+  call npm install
+  if errorlevel 1 pause & exit /b 1
+)
+start "" http://127.0.0.1:4320
+call npm run dev
 pause
