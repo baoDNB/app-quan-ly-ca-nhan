@@ -86,7 +86,9 @@ let toastTimer;
 let undoTimer;
 let pendingDeletion = null;
 let transactionPage = 1;
+let debtPage = 1;
 const TRANSACTIONS_PER_PAGE = 10;
+const DEBTS_PER_PAGE = 6;
 
 function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
 function getCategory(type, id) { return categories[type].find(item => item.id === id) || categories[type][categories[type].length - 1]; }
@@ -256,8 +258,12 @@ function renderDebts() {
   $("#debtPaidValue").textContent = money(paid);
   $("#debtRemainingValue").textContent = money(remaining);
   $("#debtEmpty").hidden = debts.length !== 0;
-  $("#debtList").innerHTML = debts
-    .sort((a, b) => Number(a.remaining === 0) - Number(b.remaining === 0) || (a.dueDate || "9999").localeCompare(b.dueDate || "9999"))
+  const sortedDebts = debts.sort((a, b) => Number(a.remaining === 0) - Number(b.remaining === 0) || (a.dueDate || "9999").localeCompare(b.dueDate || "9999"));
+  const pageCount = Math.max(1, Math.ceil(sortedDebts.length / DEBTS_PER_PAGE));
+  debtPage = Math.min(debtPage, pageCount);
+  const pageStart = (debtPage - 1) * DEBTS_PER_PAGE;
+  const pageItems = sortedDebts.slice(pageStart, pageStart + DEBTS_PER_PAGE);
+  $("#debtList").innerHTML = pageItems
     .map(debt => {
       const paidPercent = debt.total ? Math.min(100, Math.round(debt.paid / debt.total * 100)) : 0;
       const remainingPercent = Math.max(0, 100 - paidPercent);
@@ -279,6 +285,24 @@ function renderDebts() {
         </div>
       </article>`;
     }).join("");
+  renderDebtPagination(sortedDebts.length, pageCount, pageStart, pageItems.length);
+}
+
+function renderDebtPagination(total, pageCount, pageStart, visibleCount) {
+  const pagination = $("#debtPagination");
+  pagination.hidden = pageCount <= 1;
+  if (pageCount <= 1) { pagination.innerHTML = ""; return; }
+  const pageButtons = Array.from({ length: pageCount }, (_, index) => {
+    const page = index + 1;
+    return `<button type="button" data-debt-page="${page}" class="page-number ${page === debtPage ? "active" : ""}" aria-label="Trang ${page}" ${page === debtPage ? 'aria-current="page"' : ""}>${page}</button>`;
+  }).join("");
+  pagination.innerHTML = `
+    <span class="page-range">${pageStart + 1}–${pageStart + visibleCount} / ${total} khoản nợ</span>
+    <div class="page-controls">
+      <button type="button" data-debt-page="${debtPage - 1}" aria-label="Trang trước" ${debtPage === 1 ? "disabled" : ""}>‹</button>
+      ${pageButtons}
+      <button type="button" data-debt-page="${debtPage + 1}" aria-label="Trang sau" ${debtPage === pageCount ? "disabled" : ""}>›</button>
+    </div>`;
 }
 
 function renderTransactions() {
@@ -591,6 +615,7 @@ $("#debtForm").addEventListener("submit", event => {
     dueDate: $("#debtDueDateInput").value,
     note: $("#debtNoteInput").value.trim(), createdAt: localDate()
   });
+  debtPage = 1;
   saveData(); closeDebtModal(); renderDebts(); showToast("Đã thêm khoản nợ ✓");
 });
 
@@ -607,6 +632,14 @@ $("#debtList").addEventListener("click", event => {
   if (!debt || !window.confirm(`Xóa khoản nợ với ${debt.creditor}? Các giao dịch trả nợ đã ghi vẫn được giữ lại.`)) return;
   data.debts = data.debts.filter(item => String(item.id) !== deleteButton.dataset.deleteDebt);
   saveData(); renderDebts(); showToast("Đã xóa khoản nợ");
+});
+
+$("#debtPagination").addEventListener("click", event => {
+  const button = event.target.closest("[data-debt-page]");
+  if (!button || button.disabled) return;
+  debtPage = Number(button.dataset.debtPage);
+  renderDebts();
+  $("#debtList").scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 $("#repaymentForm").addEventListener("submit", event => {

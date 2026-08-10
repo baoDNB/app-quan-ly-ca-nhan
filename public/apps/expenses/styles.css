@@ -141,8 +141,8 @@ h2 { margin: 0; font-size: 18px; letter-spacing: -.4px; }
 .filtered-expense strong, #filteredBalance.negative { color: var(--coral); }
 #filteredBalance.positive { color: var(--green); }
 .transaction-list { display: grid; }.transaction-item { display: grid; grid-template-columns: 42px 1.3fr 1fr 100px 68px; gap: 12px; align-items: center; min-height: 66px; border-top: 1px solid var(--line); }.transaction-icon { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-size: 17px; }.transaction-name strong { display: block; font-size: 12px; }.transaction-name span, .transaction-category, .transaction-date { color: var(--muted); font-size: 10px; }.transaction-category { display: flex; align-items: center; gap: 6px; }.category-dot { width: 6px; height: 6px; border-radius: 50%; }.transaction-amount { text-align: right; font-weight: 800; font-size: 12px; }.transaction-amount.income { color: var(--green); }.transaction-actions { display: flex; justify-content: flex-end; gap: 2px; }.edit-btn, .delete-btn { width: 30px; height: 30px; padding: 0; border: 0; background: transparent; color: #a7b1ad; border-radius: 8px; opacity: .45; transition: .2s; }.edit-btn { font-size: 14px; }.delete-btn { font-size: 16px; }.transaction-item:hover .edit-btn, .transaction-item:hover .delete-btn, .edit-btn:focus-visible, .delete-btn:focus-visible { opacity: 1; }.edit-btn:hover { color: var(--green); background: #eaf3ee; }.delete-btn:hover { color: var(--coral); background: #fff1ed; }
-.transaction-pagination { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-top: 18px; }
-.transaction-pagination[hidden] { display: none; }
+.transaction-pagination, .debt-pagination { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-top: 18px; }
+.transaction-pagination[hidden], .debt-pagination[hidden] { display: none; }
 .page-range { color: var(--muted); font-size: 11px; }
 .page-controls { display: flex; align-items: center; gap: 5px; }
 .page-controls button { min-width: 32px; height: 32px; padding: 0 8px; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: var(--ink); font-size: 12px; font-weight: 700; }
@@ -358,7 +358,7 @@ h1 { font-size: clamp(28px, 3.2vw, 40px); line-height: 1.14; letter-spacing: -1.
   .filtered-summary > div { padding: 8px 5px; border-radius: 9px; }
   .filtered-summary span { margin-bottom: 3px; font-size: 7px; letter-spacing: -.1px; }
   .filtered-summary strong { font-size: clamp(7.5px, 2.25vw, 9px); letter-spacing: -.25px; font-variant-numeric: tabular-nums; }
-  .transaction-pagination { align-items: flex-start; flex-direction: column; }
+  .transaction-pagination, .debt-pagination { align-items: flex-start; flex-direction: column; }
   .debt-heading { align-items: flex-start; }
   .fund-heading { align-items: flex-start; flex-direction: column; }
   .fund-heading-note { text-align: left; }
