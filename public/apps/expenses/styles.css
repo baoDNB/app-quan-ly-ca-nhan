@@ -295,7 +295,9 @@ h1 { font-size: clamp(28px, 3.2vw, 40px); line-height: 1.14; letter-spacing: -1.
 .segmented span { padding: 11px; border-radius: 10px; }
 .field input, .field select { min-height: 46px; border-radius: 13px; }
 .amount-field input { min-height: auto; }
-.mobile-fab { display: none; }
+.mobile-fab { display: grid; place-items: center; position: fixed; z-index: 16; right: 22px; bottom: 22px; width: 58px; height: 58px; padding: 0; border: 4px solid var(--cream); border-radius: 19px; background: var(--green); color: #fff; box-shadow: 0 12px 28px rgba(23,107,85,.32); cursor: grab; touch-action: none; user-select: none; font-size: 25px; }
+.mobile-fab.dragging { cursor: grabbing; box-shadow: 0 16px 34px rgba(23,107,85,.4); }
+.mobile-fab:focus-visible { outline: 3px solid rgba(31,107,87,.25); outline-offset: 3px; }
 .expense-menu-button, .sidebar-overlay { display: none; }
 
 @media (max-width: 1100px) {
@@ -338,7 +340,7 @@ h1 { font-size: clamp(28px, 3.2vw, 40px); line-height: 1.14; letter-spacing: -1.
   .debt-list { grid-template-columns: 1fr; }
   .fund-grid { grid-template-columns: 1fr; }
   .rollover-card { grid-column: auto; }
-  .mobile-fab { display: grid; place-items: center; position: fixed; z-index: 16; right: 18px; bottom: max(18px, env(safe-area-inset-bottom)); width: 54px; height: 54px; border: 4px solid var(--cream); border-radius: 18px; background: var(--green); color: #fff; box-shadow: 0 12px 28px rgba(23,107,85,.32); font-size: 24px; }
+  .mobile-fab { right: 18px; bottom: max(18px, env(safe-area-inset-bottom)); width: 54px; height: 54px; border-radius: 18px; font-size: 24px; }
 }
 
 @media (max-width: 480px) {

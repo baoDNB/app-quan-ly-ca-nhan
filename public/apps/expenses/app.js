@@ -1,4 +1,5 @@
 const STORAGE_KEY = "vi-nho-data-v1";
+const ADD_BUTTON_POSITION_KEY = "vi-nho-add-button-position-v1";
 
 const categories = {
   expense: [
@@ -488,18 +489,92 @@ function closeExpenseSidebar() {
   $("#expenseMenuButton").setAttribute("aria-expanded", "false");
 }
 
+function initMovableAddButton() {
+  const button = $("#mobileAddBtn");
+  const edge = 12;
+  let drag = null;
+  let suppressClick = false;
+
+  function bounds() {
+    return {
+      maxLeft: Math.max(edge, window.innerWidth - button.offsetWidth - edge),
+      maxTop: Math.max(edge, window.innerHeight - button.offsetHeight - edge)
+    };
+  }
+
+  function place(left, top) {
+    const { maxLeft, maxTop } = bounds();
+    button.style.left = `${Math.min(maxLeft, Math.max(edge, left))}px`;
+    button.style.top = `${Math.min(maxTop, Math.max(edge, top))}px`;
+    button.style.right = "auto";
+    button.style.bottom = "auto";
+  }
+
+  function savePosition() {
+    const rect = button.getBoundingClientRect();
+    const { maxLeft, maxTop } = bounds();
+    const widthRange = Math.max(1, maxLeft - edge);
+    const heightRange = Math.max(1, maxTop - edge);
+    localStorage.setItem(ADD_BUTTON_POSITION_KEY, JSON.stringify({
+      x: (rect.left - edge) / widthRange,
+      y: (rect.top - edge) / heightRange
+    }));
+  }
+
+  function restorePosition() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(ADD_BUTTON_POSITION_KEY));
+      if (!Number.isFinite(saved?.x) || !Number.isFinite(saved?.y)) return;
+      const { maxLeft, maxTop } = bounds();
+      place(edge + Math.min(1, Math.max(0, saved.x)) * (maxLeft - edge), edge + Math.min(1, Math.max(0, saved.y)) * (maxTop - edge));
+    } catch {}
+  }
+
+  button.addEventListener("pointerdown", event => {
+    if (event.button !== 0) return;
+    const rect = button.getBoundingClientRect();
+    drag = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, left: rect.left, top: rect.top, moved: false };
+    button.setPointerCapture(event.pointerId);
+    button.classList.add("dragging");
+  });
+  button.addEventListener("pointermove", event => {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+    if (Math.hypot(dx, dy) > 5) drag.moved = true;
+    if (drag.moved) place(drag.left + dx, drag.top + dy);
+  });
+  function finishDrag(event) {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    suppressClick = drag.moved;
+    if (drag.moved) savePosition();
+    drag = null;
+    button.classList.remove("dragging");
+    if (button.hasPointerCapture(event.pointerId)) button.releasePointerCapture(event.pointerId);
+    setTimeout(() => { suppressClick = false; }, 0);
+  }
+  button.addEventListener("pointerup", finishDrag);
+  button.addEventListener("pointercancel", finishDrag);
+  button.addEventListener("click", event => {
+    if (suppressClick) { event.preventDefault(); return; }
+    openModal();
+  });
+  window.addEventListener("resize", restorePosition);
+  restorePosition();
+}
+
 $("#todayLabel").textContent = new Date().toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 $("#monthFilter").value = selectedMonth;
 fillCategories("expense");
 fillHistoryCategoryFilter();
 render();
+initMovableAddButton();
 
 $("#expenseMenuButton").addEventListener("click", () => {
   $(".sidebar").classList.contains("open") ? closeExpenseSidebar() : openExpenseSidebar();
 });
 $("#sidebarOverlay").addEventListener("click", closeExpenseSidebar);
 $("#openTransactionBtn").addEventListener("click", () => openModal());
-$("#mobileAddBtn").addEventListener("click", () => openModal());
 $("#emptyAddBtn").addEventListener("click", () => openModal());
 $("#closeModalBtn").addEventListener("click", closeModal);
 $("#transactionModal").addEventListener("click", event => { if (event.target === event.currentTarget) closeModal(); });
